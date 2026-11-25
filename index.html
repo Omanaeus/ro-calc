@@ -183,8 +183,7 @@
             <h3 class="subh" id="curve-title">เส้นราคา</h3>
             <p class="note" id="curve-note" style="margin:0 0 6px"></p>
             <button class="btn ghost small" id="curve-own" type="button" style="margin-bottom:8px"></button>
-            <div class="scroll"><table class="bd curve"><thead><tr><th>ค่าพลัง</th><th class="n">ราคา (ล้าน z)</th><th class="n">≈ บาท</th><th></th></tr></thead><tbody id="curve"></tbody></table></div>
-            <button class="btn ghost small" id="curve-add" type="button" style="margin-top:8px">+ เพิ่มจุด</button>
+            <div id="tables"></div>
             <h3 class="subh" id="om-title">ค่าเทียบดาเมจ ω ของแต่ละออปชัน</h3>
             <button class="btn ghost small" id="om-own" type="button" style="margin-bottom:6px"></button>
           </div>
@@ -212,8 +211,8 @@
     <div><h2>อาวุธตีเหล็ก: คิดจากค่าพลัง</h2>
       <p><code>ดาเมจ = (1 + ธาตุ% + ขนาด% + เผ่า% + …) × (1 + ระยะไกล%)</code></p>
       <p style="margin-top:6px"><code>ความเร็ว = 1 + 0.1 × ASPD (หรือ ASPD% × 0.015)</code></p>
-      <p style="margin-top:6px"><code>ค่าพลัง = ดาเมจ × ความเร็ว × ช่อง 4</code></p>
-      <p style="margin-top:6px">แล้วอ่านราคาจากเส้นราคาตลาด × ความต้องการของอาวุธ ไม่ต่ำกว่าต้นทุนการตี (ค่าวัตถุดิบ ÷ โอกาสสำเร็จ) จากนั้นบวกค่าใบการันตีตีบวกตรงๆ</p>
+      <p style="margin-top:6px"><code>ราคา = ราคาตามความเร็ว × ตัวคูณจากดาเมจ × ความต้องการ × ช่อง 4</code></p>
+      <p style="margin-top:6px">อาวุธที่มีเส้นราคาของตัวเองใช้ค่าพลัง (ดาเมจ × ความเร็ว) อ่านจากเส้นนั้นแทน ราคาไม่ต่ำกว่าต้นทุนการตี (ค่าวัตถุดิบ ÷ โอกาสสำเร็จ) จากนั้นบวกค่าใบการันตีตีบวกตรงๆ</p>
     </div>
     <div><h2>ค่าเทียบดาเมจ ω</h2><p>บอกว่าออปชัน 1 หน่วยมีค่าเท่าดาเมจกี่ % เช่น ไฟ ω 1 → ไฟ 40 = ดาเมจ +40%, CRI ω 2 → CRI 20 = +40% ออปชันที่ตลาดไม่ค่อยต้องการใส่ ω ต่ำ</p></div>
     <div><h2>เกราะ / ข้อมูลออปชัน</h2><p>Armor, Garment, Shoes คิดจากน้ำหนักราคาของแต่ละออปชัน × คุณภาพ roll ช่วงค่าออปชันและสูตรตีจาก rozerodb.com ซึ่งยังตรวจกับข้อมูลในเกมอยู่ ราคาที่ได้เป็นค่าประมาณ</p></div>
@@ -299,22 +298,31 @@ function renderOwner() {
   }).join("")).join("");
 }
 const ownCurve = () => CALC.hasOwnCurve(W, weapon);
+const ownTF = () => !ownCurve() && CALC.hasOwnTF(W, weapon);
 const ownOmega = () => CALC.hasOwnOmega(W, weapon);
 const keyFor = (s, name) => cur.id === "forge" ? CALC.omegaKey(W, weapon, s, name) : CALC.wkey(cur.id, s, name);
 const wval = (s, name) => W[keyFor(s, name)] ?? W[CALC.wkey(cur.id, s, name)];
 const curveKey = () => ownCurve() ? weapon : "";
+const TABLES = () => ownCurve()
+  ? [{ pre: CALC.curvePrefix(weapon), scale: 1e6, c1: "ค่าพลัง", c2: "ราคา (ล้าน z)", baht: true, title: "" }]
+  : [{ pre: ownTF() ? "speed@" + weapon + "|" : "speed|", scale: 1e6, c1: "ความเร็ว", c2: "ราคา (ล้าน z)", baht: true, title: "1) ราคาตามความเร็ว (ยังไม่มีออปชันดาเมจ)", hint: "ความเร็ว 1.1 = ASPD +1, 1.3 = ASPD +3 หรือ ASPD 20%" },
+     { pre: ownTF() ? "dmgx@" + weapon + "|" : "dmgx|", scale: 1, c1: "ตัวคูณดาเมจ", c2: "ราคา × เท่า", baht: false, title: "2) ตัวคูณจากดาเมจ", hint: "ดาเมจน้อยแทบไม่เพิ่มราคา ได้ออปชันดีหลายตัวราคาจะพุ่ง" }];
 function renderCurve() {
   const rate = Number(W["thb|perM"]) || 0, own = ownCurve();
-  $("#curve-title").textContent = own ? "เส้นราคาเฉพาะ " + weapon : "เส้นราคากลาง (อ้างอิง Stunner)";
-  $("#curve-note").textContent = own ? "อาวุธนี้ใช้เส้นราคาของตัวเอง ไม่ใช้ตัวคูณความต้องการ" : "อาวุธที่ไม่มีเส้นของตัวเอง ใช้เส้นนี้ × ความต้องการ";
-  $("#curve-own").textContent = own ? "กลับไปใช้เส้นกลาง × ความต้องการ" : "สร้างเส้นราคาเฉพาะ " + weapon;
-  $("#c-demand").disabled = own;
-  $("#curve").innerHTML = CALC.anchors(W, curveKey()).map(([p, z]) => `<tr><td><input data-c="p" value="${p}" inputmode="decimal" aria-label="ค่าพลัง"></td><td class="n"><input data-c="z" value="${+(z / 1e6).toFixed(2)}" inputmode="decimal" aria-label="ราคา ล้าน z"></td><td class="n">${rate ? n0(z / 1e6 * rate) : "–"}</td><td><button class="x" type="button" data-c="del" aria-label="ลบจุดนี้">×</button></td></tr>`).join("");
+  const tf = ownTF();
+  $("#curve-title").textContent = own ? "เส้นราคาเฉพาะ " + weapon + " (ค่าพลัง)" : tf ? "ตารางราคาเฉพาะ " + weapon : "ราคากลาง (อ้างอิง Stunner) = ราคาตามความเร็ว × ตัวคูณจากดาเมจ × ความต้องการ";
+  $("#curve-note").textContent = own ? "เส้นนี้ตั้งจากราคาชุดที่ไม่มี ASPD ถ้าอาวุธมี ASPD ราคาอาจคลาดเคลื่อน" : tf ? "อาวุธนี้ใช้ตารางของตัวเอง ไม่ใช้ตัวคูณความต้องการ" : "อาวุธที่ไม่มีตารางของตัวเองใช้ตาราง 2 ตัวนี้";
+  $("#curve-own").textContent = own || tf ? "กลับไปใช้ราคากลาง × ความต้องการ" : "สร้างตารางราคาเฉพาะ " + weapon;
+  $("#c-demand").disabled = own || tf;
+  $("#tables").innerHTML = TABLES().map((t, ti) => `${t.title ? `<h3 class="subh">${t.title}</h3>` : ""}${t.hint ? `<p class="note" style="margin:0 0 4px">${t.hint}</p>` : ""}
+    <div class="scroll"><table class="bd curve" data-tb="${ti}"><thead><tr><th>${t.c1}</th><th class="n">${t.c2}</th>${t.baht ? '<th class="n">≈ บาท</th>' : ""}<th></th></tr></thead><tbody>` +
+    CALC.table(W, t.pre).map(([x, y]) => `<tr><td><input data-c="p" value="${x}" inputmode="decimal" aria-label="${t.c1}"></td><td class="n"><input data-c="z" value="${+(y / t.scale).toFixed(3)}" inputmode="decimal" aria-label="${t.c2}"></td>${t.baht ? `<td class="n">${rate ? n0(y / 1e6 * rate) : "–"}</td>` : ""}<td><button class="x" type="button" data-c="del" aria-label="ลบจุดนี้">×</button></td></tr>`).join("") +
+    `</tbody></table></div><button class="btn ghost small" type="button" data-add="${ti}" style="margin-top:6px">+ เพิ่มจุด</button>`).join("");
 }
-function readCurve() {
-  const pre = CALC.curvePrefix(curveKey());
-  Object.keys(W).forEach(k => { if (k.startsWith(pre)) delete W[k]; });
-  [...$("#curve").rows].forEach(tr => { const p = Number(tr.querySelector('[data-c="p"]').value), z = Number(tr.querySelector('[data-c="z"]').value); if (p > 0 && z > 0) W[pre + p] = Math.round(z * 1e6); });
+function readCurve(ti) {
+  const t = TABLES()[ti], tb = $(`#tables [data-tb="${ti}"]`); if (!t || !tb) return;
+  Object.keys(W).forEach(k => { if (k.startsWith(t.pre)) delete W[k]; });
+  [...tb.tBodies[0].rows].forEach(tr => { const x = Number(tr.querySelector('[data-c="p"]').value), y = Number(tr.querySelector('[data-c="z"]').value); if (x > 0 && y > 0) W[t.pre + x] = t.scale === 1 ? y : Math.round(y * t.scale); });
 }
 /* ---------- ต้นทุนการตี ---------- */
 const RECIPES = window.RECIPES || [], SUB = window.SUBRECIPES || {};
@@ -364,15 +372,16 @@ function calcForge() {
   setTotal(r.total);
   r.lines.forEach(l => { const q = $("#q-" + l.slot); if (q) q.style.width = l.q * 100 + "%"; });
   [0, 1, 2, 3].forEach(s => { if (!r.lines.some(l => l.slot === s)) { const q = $("#q-" + s); if (q) q.style.width = "0%"; } });
-  $("#grade").textContent = (refine ? "+" + refine + " " : "") + weapon + (stars ? ` · Star Crumb ×${stars}` : "") + (r.own ? " · ใช้เส้นราคาเฉพาะอาวุธนี้" : ` · ความต้องการ ×${r.demand}`);
+  $("#grade").textContent = (refine ? "+" + refine + " " : "") + weapon + (stars ? ` · Star Crumb ×${stars}` : "") + (r.own || r.ownTF ? " · ใช้ราคาเฉพาะอาวุธนี้" : ` · ความต้องการ ×${r.demand}`);
   $("#pw").hidden = false;
   $("#pw").innerHTML = `<div>ตัวคูณดาเมจ <code>(1 + ${r.add.toFixed(2)})${r.mult !== 1 ? " × " + r.mult.toFixed(2) : ""}</code> = <b>${r.dmg.toFixed(2)}</b></div>
     <div>ความเร็ว <b>×${r.speed.toFixed(2)}</b> · ช่อง 4 <b>×${r.s4.toFixed(3)}</b></div>
-    <div>ค่าพลัง = ${r.dmg.toFixed(2)} × ${r.speed.toFixed(2)} × ${r.s4.toFixed(3)} = <b>${r.power.toFixed(3)}</b></div>`;
+    ${r.own ? `<div>ค่าพลัง = ${r.dmg.toFixed(2)} × ${r.speed.toFixed(2)} = <b>${r.power.toFixed(3)}</b></div>` : `<div>ราคา = ${esc(n0(r.speedZ / 1e6))}m (ความเร็ว) × <b>${r.dmgX.toFixed(2)}</b> (ดาเมจ) × ${r.demand}${r.s4 !== 1 ? " × " + r.s4.toFixed(3) : ""}</div>`}`;
   $("#bd-head").innerHTML = `<tr><th>ช่อง</th><th>ออปชัน</th><th class="n">ผล</th></tr>`;
   const rows = r.lines.map(l => `<tr><td>${l.slot + 1}</td><td>${esc(short(l.name))} <span style="color:var(--soft)">+${esc(l.value)}</span><br><span class="role">${ROLE[l.role]}${l.role !== "slot4" ? " · ω " + l.omega : ""}</span></td><td class="n">${l.role === "slot4" ? "×" + (1 + l.eff).toFixed(3) : esc(effText(l.role, l.omega, l.value))}</td></tr>`).join("");
   $("#bd").innerHTML = (rows || `<tr><td colspan="3" style="color:var(--soft)">ยังไม่มีออปชัน</td></tr>`) +
-    `<tr class="cost"><td>–</td><td>${r.own ? "ราคาตลาดจากเส้นราคาของ " + esc(weapon) : "ราคาตลาดจากเส้นราคากลาง × ความต้องการ"}</td><td class="n">${esc(n0(r.market))}</td></tr>` +
+    (r.own ? "" : `<tr class="cost"><td>–</td><td>ราคาตามความเร็ว ×${r.speed.toFixed(2)}</td><td class="n">${esc(n0(r.speedZ))}</td></tr><tr class="cost"><td>–</td><td>× ตัวคูณจากดาเมจ ${r.dmg.toFixed(2)} · × ความต้องการ ${r.demand}${r.s4 !== 1 ? " · × ช่อง 4" : ""}</td><td class="n">×${(r.dmgX * r.demand * r.s4).toFixed(2)}</td></tr>`) +
+    `<tr class="cost"><td>–</td><td>${r.own ? "ราคาตลาดจากเส้นราคาของ " + esc(weapon) + (r.s4 !== 1 ? " × ช่อง 4" : "") : "= ราคาตลาด"}</td><td class="n">${esc(n0(r.market))}</td></tr>` +
     `<tr class="cost"><td>–</td><td>ต้นทุนการตีเฉลี่ย (ราคาขั้นต่ำ)</td><td class="n">${esc(n0(r.fc.expected))}</td></tr>` +
     (refine ? `<tr class="cost"><td>–</td><td>ตีบวก +${refine} ${r.refineZ ? "(ใบการันตี " + esc(n0(W["refine|" + refine])) + " บาท)" : "(ยังไม่ได้ตั้งราคา)"}</td><td class="n">+${esc(n0(r.refineZ))}</td></tr>` : "");
   $("#note").textContent = r.floored ? "ออปชันยังไม่ดีพอ ราคาจึงเท่ากับต้นทุนการตี" : r.fc.missing ? "ยังใส่ราคาวัตถุดิบไม่ครบ ต้นทุนการตีจึงต่ำกว่าจริง" : "ราคานี้เป็นการประเมินจากราคาตลาด ใช้เป็นจุดเริ่มต่อรองได้";
@@ -435,15 +444,15 @@ $("#cfg-forge").addEventListener("input", e => {
   else if (id === "c-s4o" && v >= 0) W["forge|s4other"] = v;
   else if (id === "c-thb" && v >= 0) W["thb|perM"] = v;
   else if (e.target.dataset.r && v >= 0) W["refine|" + e.target.dataset.r] = v;
-  else if (e.target.dataset.c) { readCurve(); }
+  else if (e.target.dataset.c) { readCurve(Number(e.target.closest("[data-tb]").dataset.tb)); }
   else return;
   saveW(); calc();
   if (id === "c-demand") $("#d-name").textContent = "(" + weapon + ")";
 });
-$("#cfg-forge").addEventListener("change", e => { if (e.target.dataset.c || e.target.id === "c-thb") renderCurve(); });
+$("#cfg-forge").addEventListener("change", e => { if (e.target.id === "c-thb") renderCurve(); });
 $("#cfg-forge").addEventListener("click", e => {
-  if (e.target.dataset.c === "del") { e.target.closest("tr").remove(); readCurve(); saveW(); renderCurve(); calc(); }
-  if (e.target.id === "curve-add") { const A = CALC.anchors(W, curveKey()), last = A[A.length - 1] || [1, 1e6]; W[CALC.curvePrefix(curveKey()) + +(last[0] + 0.1).toFixed(2)] = Math.round(last[1] * 1.5); saveW(); renderCurve(); calc(); }
+  if (e.target.dataset.c === "del") { const ti = Number(e.target.closest("[data-tb]").dataset.tb); e.target.closest("tr").remove(); readCurve(ti); saveW(); renderCurve(); calc(); }
+  if (e.target.dataset.add !== undefined) { const t = TABLES()[Number(e.target.dataset.add)], A = CALC.table(W, t.pre), last = A[A.length - 1] || [1, t.scale]; W[t.pre + +(last[0] + 0.1).toFixed(2)] = t.scale === 1 ? +(last[1] * 1.5).toFixed(2) : Math.round(last[1] * 1.5); saveW(); renderCurve(); calc(); }
   if (e.target.id === "om-own") {
     const pre = "forge@" + weapon + "|";
     if (ownOmega()) Object.keys(W).forEach(k => { if (k.startsWith(pre)) delete W[k]; });
@@ -451,9 +460,13 @@ $("#cfg-forge").addEventListener("click", e => {
     saveW(); renderOwner(); renderSlots(); calc();
   }
   if (e.target.id === "curve-own") {
-    const pre = CALC.curvePrefix(weapon);
-    if (ownCurve()) Object.keys(W).forEach(k => { if (k.startsWith(pre)) delete W[k]; });
-    else { const d = Number(W["demand|" + weapon] ?? W["demand|*"] ?? 1); CALC.anchors(W, "").forEach(([p, z]) => W[pre + p] = Math.round(z * d)); }
+    const pres = ["curve@", "speed@", "dmgx@"].map(p => p + weapon + "|");
+    if (ownCurve() || ownTF()) Object.keys(W).forEach(k => { if (pres.some(p => k.startsWith(p))) delete W[k]; });
+    else { // เริ่มจากราคากลาง × ความต้องการ
+      const d = Number(W["demand|" + weapon] ?? W["demand|*"] ?? 1);
+      CALC.table(W, "speed|").forEach(([x, y]) => W["speed@" + weapon + "|" + x] = Math.round(y * d));
+      CALC.table(W, "dmgx|").forEach(([x, y]) => W["dmgx@" + weapon + "|" + x] = y);
+    }
     saveW(); renderOwner(); calc();
   }
 });

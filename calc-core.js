@@ -93,7 +93,7 @@
       lines.push({ slot: s, name: opt[0], value: v, min: opt[1], max: opt[2], q: quality(v, opt[1], opt[2]), role, omega: om, eff });
     });
     const dmg = (1 + add) * mult;
-    return { lines, add, mult, dmg, speed, s4, power: dmg * speed * s4 };
+    return { lines, add, mult, dmg, speed, s4, power: dmg * speed };
   }
 
   // เส้นราคา: จุดอ้างอิง "curve|ค่าพลัง" = ราคา (z) ต่อกันแบบ log; นอกช่วงใช้ความชันของช่วงริมสุด
@@ -104,6 +104,21 @@
     return Object.keys(W).filter(k => k.startsWith(pre)).map(k => [Number(k.slice(pre.length)), Number(W[k])]).filter(a => a[0] > 0 && a[1] > 0).sort((a, b) => a[0] - b[0]);
   }
   const hasOwnCurve = (W, weapon) => !!weapon && anchors(W, weapon).length >= 2;
+  // ต่อจุดแบบ log (ใช้กับทุกตาราง): pts = [[x, y], ...] เรียงตาม x
+  function interpLog(pts, x) {
+    if (!pts.length) return 0; if (pts.length === 1) return pts[0][1];
+    let i = pts.findIndex(a => a[0] >= x);
+    if (i === 0) i = 1; else if (i < 0) i = pts.length - 1;
+    const [x0, y0] = pts[i - 1], [x1, y1] = pts[i], t = (x - x0) / (x1 - x0);
+    return Math.max(0, Math.exp(Math.log(y0) + t * (Math.log(y1) - Math.log(y0))));
+  }
+  const table = (W, pre) => Object.keys(W).filter(k => k.startsWith(pre)).map(k => [Number(k.slice(pre.length)), Number(W[k])]).filter(a => a[0] > 0 && a[1] > 0).sort((a, b) => a[0] - b[0]);
+  // เส้นกลาง: ราคาตามความเร็ว "speed|ความเร็ว" = z และตัวคูณจากดาเมจ "dmgx|ตัวคูณดาเมจ" = เท่า
+  // ตารางเฉพาะอาวุธ: "speed@อาวุธ|…" / "dmgx@อาวุธ|…" (ถ้ามี ≥ 2 จุด ใช้แทนของกลาง)
+  const hasOwnTF = (W, weapon) => !!weapon && (table(W, "speed@" + weapon + "|").length >= 2 || table(W, "dmgx@" + weapon + "|").length >= 2);
+  const tfPre = (W, kind, weapon) => weapon && table(W, kind + "@" + weapon + "|").length >= 2 ? kind + "@" + weapon + "|" : kind + "|";
+  const speedPrice = (sp, W, weapon) => interpLog(table(W, tfPre(W, "speed", weapon)), sp);
+  const dmgMult = (d, W, weapon) => interpLog(table(W, tfPre(W, "dmgx", weapon)), d);
   function curvePrice(P, W, weapon) {
     const A = anchors(W, weapon); if (!A.length) return 0; if (A.length === 1) return A[0][1];
     let i = A.findIndex(a => a[0] >= P);
@@ -122,13 +137,15 @@
   function refineFromText(text) { const m = String(text || "").match(/(?:^|\n)\s*\+\s?(\d{1,2})\s+[A-Za-z]/); return m ? Math.min(20, parseInt(m[1], 10)) : 0; }
 
   function forgePrice(type, picks, W, recipe, sub, refine) {
-    const name = recipe ? recipe[0] : "", own = hasOwnCurve(W, name);
+    const name = recipe ? recipe[0] : "", own = hasOwnCurve(W, name), ownTF = !own && hasOwnTF(W, name);
     const pw = forgePower(type, picks, W, name);
-    const demand = own ? 1 : name && W["demand|" + name] !== undefined ? Number(W["demand|" + name]) : Number(W["demand|*"] ?? 1);
-    const market = Math.round(curvePrice(pw.power, W, own ? name : "") * (isFinite(demand) ? demand : 1));
+    const demand = own || (ownTF && table(W, "speed@" + name + "|").length >= 2) ? 1 : name && W["demand|" + name] !== undefined ? Number(W["demand|" + name]) : Number(W["demand|*"] ?? 1);
+    const d = isFinite(demand) ? demand : 1;
+    const sz = own ? 0 : speedPrice(pw.speed, W, name), gx = own ? 0 : dmgMult(pw.dmg, W, name);
+    const market = Math.round((own ? curvePrice(pw.power, W, name) : sz * gx * d) * pw.s4);
     const fc = forgeCost(recipe, W, sub);
     const rz = refineZ(refine || 0, W);
-    return { ...pw, own, demand, market, fc, refine: refine || 0, refineZ: rz, total: Math.max(market, fc.expected) + rz, floored: fc.expected > market };
+    return { ...pw, own, ownTF, demand, speedZ: sz, dmgX: gx, market, fc, refine: refine || 0, refineZ: rz, total: Math.max(market, fc.expected) + rz, floored: fc.expected > market };
   }
 
   /* ---------- OCR matching ---------- */
@@ -186,7 +203,7 @@
   /** นับ "Very" หน้าคำว่า Strong = จำนวน Star Crumb */
   function starsFromText(text) { const m = String(text || "").match(/((?:very\s*)+)strong/i); return m ? Math.min(3, (m[1].match(/very/gi) || []).length) : 0; }
 
-  const api = { refineZ, refineFromText, hasOwnOmega, omegaKey, curvePrefix, hasOwnCurve, roleOf, forgePower, curvePrice, anchors, forgePrice, starsFromText, DEFAULT_CFG, wkey, quality, optionValue, price, matchText, unitPrice, forgeCost };
+  const api = { hasOwnTF, tfPre, interpLog, table, speedPrice, dmgMult, refineZ, refineFromText, hasOwnOmega, omegaKey, curvePrefix, hasOwnCurve, roleOf, forgePower, curvePrice, anchors, forgePrice, starsFromText, DEFAULT_CFG, wkey, quality, optionValue, price, matchText, unitPrice, forgeCost };
   root.CALC = api;
   if (typeof module !== "undefined") module.exports = api;
 })(typeof window !== "undefined" ? window : globalThis);
