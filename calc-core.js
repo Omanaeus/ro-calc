@@ -203,7 +203,15 @@
   /** นับ "Very" หน้าคำว่า Strong = จำนวน Star Crumb */
   function starsFromText(text) { const m = String(text || "").match(/((?:very\s*)+)strong/i); return m ? Math.min(3, (m[1].match(/very/gi) || []).length) : 0; }
 
-  const api = { hasOwnTF, tfPre, interpLog, table, speedPrice, dmgMult, refineZ, refineFromText, hasOwnOmega, omegaKey, curvePrefix, hasOwnCurve, roleOf, forgePower, curvePrice, anchors, forgePrice, starsFromText, DEFAULT_CFG, wkey, quality, optionValue, price, matchText, unitPrice, forgeCost };
+  /** หาชื่ออาวุธจากบรรทัดชื่อไอเทมเท่านั้น (บรรทัดก่อนคำอธิบาย/Type) ต้องตรงทั้งคำ; ไม่เจอ = "" */
+  function weaponFromText(text, names) {
+    const lines = String(text || "").split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    const title = lines.slice(0, 1).filter(l => !/:/.test(l)).join(" ").replace(/^\+\s?\d+\s*/, "").replace(/(?:very\s*)*strong/ig, " ").replace(/\[\d\]/g, " ");
+    const hit = names.filter(n => new RegExp("(^|[^a-z])" + n.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "([^a-z]|$)", "i").test(title)).sort((a, b) => b.length - a.length);
+    return hit[0] || "";
+  }
+
+  const api = { weaponFromText, hasOwnTF, tfPre, interpLog, table, speedPrice, dmgMult, refineZ, refineFromText, hasOwnOmega, omegaKey, curvePrefix, hasOwnCurve, roleOf, forgePower, curvePrice, anchors, forgePrice, starsFromText, DEFAULT_CFG, wkey, quality, optionValue, price, matchText, unitPrice, forgeCost };
   root.CALC = api;
   if (typeof module !== "undefined") module.exports = api;
 })(typeof window !== "undefined" ? window : globalThis);

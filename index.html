@@ -527,12 +527,13 @@ async function handleFile(file) {
     if (!window.Tesseract) await loadScript(TESS);
     if (!worker) worker = await Tesseract.createWorker("eng");
     const { data } = await worker.recognize(forOcr(img));
+    let weaponMsg = "";
     let best = { t: cur, m: CALC.matchText(cur, data.text) };
     TYPES.forEach(t => { if (t === cur) return; const m = CALC.matchText(t, data.text); if (m.count > best.m.count) best = { t, m }; });
     if (!best.m.count) return say($("#ocr-status"), "อ่านออปชันไม่เจอ ลองครอปให้เห็นเฉพาะกล่องออปชัน หรือเลือกเองด้านล่าง", "bad");
-    if (best.t.id === "forge") { const low = data.text.toLowerCase(); const hit = RECIPES.map(r => r[0]).filter(n => low.includes(n.toLowerCase())).sort((a, b) => b.length - a.length)[0]; if (hit) { weapon = hit; store.set("ro-calc-weapon", weapon); } stars = CALC.starsFromText(data.text); store.set("ro-calc-star", String(stars)); refine = Math.min(10, CALC.refineFromText(data.text)); store.set("ro-calc-refine", String(refine)); }
+    if (best.t.id === "forge") { const hit = CALC.weaponFromText(data.text, RECIPES.map(r => r[0])); if (hit) { weapon = hit; store.set("ro-calc-weapon", weapon); } weaponMsg = hit ? " · อาวุธ: " + hit : " · ชื่ออาวุธถูกตัดในรูป เลือกอาวุธเองในส่วนต้นทุนการตี"; stars = CALC.starsFromText(data.text); store.set("ro-calc-star", String(stars)); refine = Math.min(10, CALC.refineFromText(data.text)); store.set("ro-calc-refine", String(refine)); }
     cur = best.t; picks[cur.id] = best.m.picks; renderTypes(); renderSlots(); renderOwner();
-    say($("#ocr-status"), `อ่านได้ ${best.m.count} ออปชัน (${cur.label}) ตรวจค่าให้ถูกอีกที`, "ok");
+    say($("#ocr-status"), `อ่านได้ ${best.m.count} ออปชัน (${cur.label})${cur.id === "forge" ? weaponMsg : ""} ตรวจค่าให้ถูกอีกที`, "ok");
   } catch (e) { say($("#ocr-status"), e.message, "bad"); }
 }
 const drop = $("#drop");
