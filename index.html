@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Chonburi&family=Cinzel:wght@600;700&family=Kanit:wght@500;700&family=Sarabun:wght@400;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=20261126c">
 <style>
 .ctop{background:linear-gradient(#0b0a1d,#2a2050);border-bottom:3px solid var(--frame);padding-block:22px}
 .ctop .wrap{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between}
@@ -221,11 +221,11 @@
 
 <footer>เครื่องมือนี้ทำโดยผู้เล่น ไม่ได้เกี่ยวข้องกับ Gravity หรือผู้ให้บริการเกม</footer>
 
-<script src="common.js"></script>
-<script src="affixes.js"></script>
-<script src="weights.js"></script>
-<script src="recipes.js"></script>
-<script src="calc-core.js"></script>
+<script src="common.js?v=20261126c"></script>
+<script src="affixes.js?v=20261126c"></script>
+<script src="weights.js?v=20261126c"></script>
+<script src="recipes.js?v=20261126c"></script>
+<script src="calc-core.js?v=20261126c"></script>
 <script>
 {
 const { esc, fmt, parsePrice } = RO;
@@ -531,7 +531,7 @@ async function handleFile(file) {
     let best = { t: cur, m: CALC.matchText(cur, data.text) };
     TYPES.forEach(t => { if (t === cur) return; const m = CALC.matchText(t, data.text); if (m.count > best.m.count) best = { t, m }; });
     if (!best.m.count) return say($("#ocr-status"), "อ่านออปชันไม่เจอ ลองครอปให้เห็นเฉพาะกล่องออปชัน หรือเลือกเองด้านล่าง", "bad");
-    if (best.t.id === "forge") { const hit = CALC.weaponFromText(data.text, RECIPES.map(r => r[0])); if (hit) { weapon = hit; store.set("ro-calc-weapon", weapon); } weaponMsg = hit ? " · อาวุธ: " + hit : " · ชื่ออาวุธถูกตัดในรูป เลือกอาวุธเองในส่วนต้นทุนการตี"; stars = CALC.starsFromText(data.text); store.set("ro-calc-star", String(stars)); refine = Math.min(10, CALC.refineFromText(data.text)); store.set("ro-calc-refine", String(refine)); }
+    if (best.t.id === "forge") { const hit = CALC.weaponFromText ? CALC.weaponFromText(data.text, RECIPES.map(r => r[0])) : ""; if (hit) { weapon = hit; store.set("ro-calc-weapon", weapon); } weaponMsg = hit ? " · อาวุธ: " + hit : " · ชื่ออาวุธถูกตัดในรูป เลือกอาวุธเองในส่วนต้นทุนการตี"; stars = CALC.starsFromText ? CALC.starsFromText(data.text) : stars; store.set("ro-calc-star", String(stars)); refine = CALC.refineFromText ? Math.min(10, CALC.refineFromText(data.text)) : refine; store.set("ro-calc-refine", String(refine)); }
     cur = best.t; picks[cur.id] = best.m.picks; renderTypes(); renderSlots(); renderOwner();
     say($("#ocr-status"), `อ่านได้ ${best.m.count} ออปชัน (${cur.label})${cur.id === "forge" ? weaponMsg : ""} ตรวจค่าให้ถูกอีกที`, "ok");
   } catch (e) { say($("#ocr-status"), e.message, "bad"); }
@@ -545,6 +545,7 @@ drop.addEventListener("dragleave", () => drop.classList.remove("over"));
 drop.addEventListener("drop", e => { e.preventDefault(); drop.classList.remove("over"); handleFile(e.dataTransfer.files[0]); });
 document.addEventListener("paste", e => { if (e.target.closest && e.target.closest("textarea,input")) return; const f = [...(e.clipboardData?.files || [])].find(f => /^image\//.test(f.type)); if (f) { e.preventDefault(); handleFile(f); } });
 
+if (!CALC.weaponFromText || !CALC.forgePrice) say($("#ocr-status"), "ไฟล์ของเว็บไม่ตรงรุ่นกัน (calc-core.js เป็นตัวเก่า) ลองกด Ctrl+F5 หรืออัป calc-core.js ใหม่", "bad");
 /* ---------- start (ตัวอย่างเริ่มต้นให้เห็นการทำงาน) ---------- */
 picks.forge = [{ name: "Physical Damage to Fire enemies (%)", value: 38 }, { name: "ASPD", value: 2 }, { name: "Phys Damage to Demi-Human monsters (%)", value: 41 }, null];
 loadW(); renderTypes(); renderSlots(); renderOwner();
