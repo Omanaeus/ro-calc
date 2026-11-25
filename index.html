@@ -70,6 +70,23 @@
 .custom .mine{display:inline-block}
 .share textarea{width:100%;min-height:70px;font-size:13px;font-family:ui-monospace,monospace;margin-top:8px}
 .owner .slot .w{display:flex}
+.forge{margin-top:18px;padding-top:16px;border-top:1px solid #5a3d1a}
+.forge[hidden]{display:none}
+.frow{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:10px;margin-bottom:10px}
+.frow label{display:grid;gap:4px;font-size:13px;color:var(--soft)}
+.frow select,.frow input{width:100%}
+.mats input{width:8.5em;min-height:36px;padding:6px 10px;text-align:right}
+.mats td{vertical-align:middle}
+.mats .hint{display:block;font-size:12px;color:var(--soft)}
+.subm{margin-top:10px;font-size:14px;color:var(--soft)}
+.subm summary{cursor:pointer;min-height:32px}
+.subm .r{display:grid;grid-template-columns:minmax(0,1fr) 9em;gap:8px;align-items:center;margin-top:6px}
+.subm input{min-height:36px;padding:6px 10px;width:100%;text-align:right}
+.fsum{margin-top:12px;background:rgb(0 0 0/.25);border:1px solid #4a3826;border-radius:8px;padding:12px 14px;font-size:15px;display:grid;gap:4px}
+.fsum b{color:var(--gold-ink);font-family:Kanit,sans-serif;font-weight:500;white-space:nowrap}
+.fsum .warn{color:var(--bad);font-size:13px}
+.bd tr.cost td{color:#e6dcc4;border-bottom:1px solid #4a3826}
+@media(max-width:480px){.frow{grid-template-columns:minmax(0,1fr)}.mats input{width:6.5em}}
 </style>
 </head>
 <body>
@@ -101,6 +118,19 @@
         <div class="acts" style="justify-content:flex-start;margin-top:10px">
           <button class="btn ghost small" id="max-btn" type="button">ใส่ค่าสูงสุดทุกช่อง</button>
           <button class="btn ghost small" id="clear-btn" type="button">ล้างทั้งหมด</button>
+        </div>
+
+        <div class="forge" id="forge">
+          <h2>ต้นทุนการตี</h2>
+          <div class="frow">
+            <label>อาวุธ<select id="f-weapon"></select></label>
+            <label>โอกาสตีสำเร็จ (%)<input id="f-rate" type="number" min="1" max="100" step="1" inputmode="numeric"></label>
+          </div>
+          <div class="scroll">
+            <table class="bd mats"><thead><tr><th>วัตถุดิบ</th><th class="n">จำนวน</th><th class="n">ราคา/ชิ้น (z)</th><th class="n">รวม</th></tr></thead><tbody id="f-mats"></tbody></table>
+          </div>
+          <details class="subm" id="f-sub"><summary>ราคาวัตถุดิบย่อย (ถ้าทำ Steel / Iron / Oridecon เอง)</summary><div id="f-subrows"></div></details>
+          <div class="fsum" id="f-sum"></div>
         </div>
       </section>
 
@@ -148,9 +178,10 @@
     <div><h2>สูตร</h2>
       <p><code>q = (ค่าที่ได้ − ต่ำสุด) ÷ (สูงสุด − ต่ำสุด)</code></p>
       <p style="margin-top:6px"><code>มูลค่า = น้ำหนัก × (ขั้นต่ำ + (1 − ขั้นต่ำ) × q<sup>k</sup>)</code></p>
-      <p style="margin-top:6px"><code>ราคา = ราคาฐาน + ผลรวมมูลค่าทุกช่อง</code></p>
+      <p style="margin-top:6px"><code>ต้นทุนการตี = ค่าวัตถุดิบ ÷ โอกาสสำเร็จ</code></p>
+      <p style="margin-top:6px"><code>ราคา = ต้นทุนการตี (อาวุธ) + ราคาฐาน + ผลรวมมูลค่าทุกช่อง</code></p>
     </div>
-    <div><h2>ข้อมูลออปชัน</h2><p>ช่วงค่าออปชันจาก rozerodb.com ซึ่งแจ้งว่ายังตรวจสอบกับข้อมูลในเกมอยู่ อาจคลาดเคลื่อนได้บ้าง ราคาที่ได้เป็นค่าประมาณ ไม่ใช่ราคาตลาดจริง</p></div>
+    <div><h2>ข้อมูลออปชัน</h2><p>ช่วงค่าออปชันและสูตรตีอาวุธจาก rozerodb.com ซึ่งแจ้งว่ายังตรวจสอบกับข้อมูลในเกมอยู่ อาจคลาดเคลื่อนได้บ้าง ราคาที่ได้เป็นค่าประมาณ ไม่ใช่ราคาตลาดจริง</p></div>
   </div>
 </section>
 
@@ -159,6 +190,7 @@
 <script src="common.js"></script>
 <script src="affixes.js"></script>
 <script src="weights.js"></script>
+<script src="recipes.js"></script>
 <script src="calc-core.js"></script>
 <script>
 {
@@ -190,6 +222,7 @@ function renderTypes() {
   $("#types").innerHTML = TYPES.map(t => `<button type="button" class="chip" data-t="${t.id}" aria-pressed="${t === cur}">${esc(t.label)}</button>`).join("");
   $("#src").textContent = "แหล่งออปชัน: " + cur.source + " · " + cur.slots.length + " ช่อง";
   $("#cfg-type").textContent = cur.label;
+  renderForge();
 }
 function renderSlots() {
   const P = picks[cur.id];
@@ -214,16 +247,53 @@ function renderOwner() {
     return `<div class="r"><span>${esc(short(o[0]))} <small>${o[1]}–${o[2]}</small></span><input data-k="${esc(k)}" inputmode="decimal" value="${esc(W[k] || "")}" placeholder="0" aria-label="น้ำหนัก ${esc(o[0])}"></div>`;
   }).join("")).join("");
 }
+/* ---------- ต้นทุนการตี ---------- */
+const RECIPES = window.RECIPES || [], SUB = window.SUBRECIPES || {};
+let weapon = store.get("ro-calc-weapon") || "Two-Handed Axe";
+const recipeOf = () => RECIPES.find(r => r[0] === weapon) || null;
+const n0 = v => Math.round(v).toLocaleString("en-US");
+const subNames = () => [...new Set(Object.values(SUB).flat().map(x => x[0]))];
+function renderForge() {
+  const on = cur.id === "forge"; $("#forge").hidden = !on; if (!on) return;
+  $("#f-weapon").innerHTML = [1, 2, 3].map(lv => `<optgroup label="อาวุธ Lv ${lv}">` + RECIPES.filter(r => r[1] === lv).map(r => `<option value="${esc(r[0])}"${r[0] === weapon ? " selected" : ""}>${esc(r[0])}</option>`).join("") + `</optgroup>`).join("");
+  $("#f-rate").value = Math.round((Number(W["forge|rate"]) || 0.4) * 100);
+  const fc = CALC.forgeCost(recipeOf(), W, SUB);
+  $("#f-mats").innerHTML = fc.lines.map(l => {
+    const own = Number(W["mat|" + l.name]) || "";
+    const hint = l.from === "craft" ? `<span class="hint">≈ ${n0(l.unit)} ถ้าทำเอง</span>` : SUB[l.name] ? `<span class="hint">หรือใส่ราคาวัตถุดิบย่อย</span>` : "";
+    return `<tr><td>${esc(l.name)}${hint}</td><td class="n">×${l.qty}</td><td class="n"><input data-m="${esc(l.name)}" inputmode="decimal" value="${esc(own)}" placeholder="${l.from === "craft" ? esc(n0(l.unit)) : "ราคา"}" aria-label="ราคา ${esc(l.name)} ต่อชิ้น"></td><td class="n">${l.unit ? n0(l.cost) : "–"}</td></tr>`;
+  }).join("");
+  const needSub = fc.lines.some(l => SUB[l.name]);
+  $("#f-sub").hidden = !needSub;
+  $("#f-subrows").innerHTML = subNames().filter(n => !fc.lines.some(l => l.name === n)).map(n => `<div class="r"><span>${esc(n)}</span><input data-m="${esc(n)}" inputmode="decimal" value="${esc(Number(W["mat|" + n]) || "")}" placeholder="ราคา/ชิ้น" aria-label="ราคา ${esc(n)}"></div>`).join("");
+  updateForgeSum(fc);
+}
+function updateForgeSum(fc) {
+  $("#f-sum").innerHTML = `<div>ค่าวัตถุดิบต่อการตี 1 ครั้ง <b>${n0(fc.matCost)} z</b></div>
+    <div>โอกาสสำเร็จ ${Math.round(fc.rate * 100)}% → ต้องตีเฉลี่ย ${(1 / fc.rate).toFixed(1)} ครั้งต่ออาวุธ 1 ชิ้น</div>
+    <div>ต้นทุนเฉลี่ยต่ออาวุธ 1 ชิ้น <b>${n0(fc.expected)} z</b></div>` +
+    (fc.missing ? `<div class="warn">ยังไม่ได้ใส่ราคาวัตถุดิบ ${fc.missing} อย่าง จึงยังคิดต้นทุนไม่ครบ</div>` : "");
+}
+function refreshForgeNumbers() {
+  // อัปเดตเฉพาะตัวเลข ไม่ render ช่องกรอกใหม่ (ไม่ให้เคอร์เซอร์หลุด)
+  const fc = CALC.forgeCost(recipeOf(), W, SUB);
+  [...$("#f-mats").rows].forEach((tr, i) => { const l = fc.lines[i]; if (!l) return; tr.cells[3].textContent = l.unit ? n0(l.cost) : "–"; const inp = tr.querySelector("input"); if (!inp.value) inp.placeholder = l.from === "craft" ? n0(l.unit) : "ราคา"; const h = tr.cells[0].querySelector(".hint"); if (h && l.from === "craft") h.textContent = "≈ " + n0(l.unit) + " ถ้าทำเอง"; });
+  updateForgeSum(fc);
+}
+
 function calc() {
   const r = CALC.price(cur, picks[cur.id], W, cfgOf(cur));
-  $("#total").innerHTML = esc(Math.round(r.total).toLocaleString("en-US")) + " <small>z</small>";
+  const fc = cur.id === "forge" ? CALC.forgeCost(recipeOf(), W, SUB) : null;
+  const total = r.total + (fc ? fc.expected : 0);
+  $("#total").innerHTML = esc(n0(total)) + " <small>z</small>";
   const used = r.lines.filter(Boolean);
   r.lines.forEach((l, s) => { const q = $("#q-" + s); if (q) q.style.width = (l ? l.q * 100 : 0) + "%"; });
   const avg = used.length ? used.reduce((a, l) => a + l.q, 0) / used.length : 0;
-  $("#grade").textContent = used.length ? `${used.length}/${cur.slots.length} ช่อง · คุณภาพ roll เฉลี่ย ${Math.round(avg * 100)}%` + (r.cfg.base ? ` · ราคาฐาน ${fmt(r.cfg.base, "z")}` : "") : "เลือกออปชันทางซ้ายเพื่อเริ่มคำนวณ";
-  $("#bd").innerHTML = used.length ? used.map(l => `<tr><td>${l.slot + 1}</td><td>${esc(short(l.name))} <span style="color:var(--soft)">+${esc(l.value)}</span></td><td class="n">${Math.round(l.q * 100)}%</td><td class="n">${esc(l.worth.toLocaleString("en-US"))}</td></tr>`).join("") : `<tr><td colspan="4" style="color:var(--soft)">ยังไม่มีออปชัน</td></tr>`;
-  $("#note").textContent = used.some(l => !l.weight) ? "บางออปชันยังไม่มีน้ำหนัก จึงคิดเป็น 0" : "ราคานี้เป็นการประเมินเบื้องต้น ใช้เป็นจุดเริ่มต่อรองได้";
-  return r;
+  $("#grade").textContent = (fc ? weapon + " · " : "") + (used.length ? `${used.length}/${cur.slots.length} ช่อง · คุณภาพ roll เฉลี่ย ${Math.round(avg * 100)}%` : "ยังไม่ได้เลือกออปชัน") + (r.cfg.base ? ` · ราคาฐาน ${fmt(r.cfg.base, "z")}` : "");
+  const costRow = fc ? `<tr class="cost"><td>–</td><td>ต้นทุนการตี (เฉลี่ย, สำเร็จ ${Math.round(fc.rate * 100)}%)</td><td class="n"></td><td class="n">${esc(n0(fc.expected))}</td></tr>` : "";
+  $("#bd").innerHTML = costRow + (used.length ? used.map(l => `<tr><td>${l.slot + 1}</td><td>${esc(short(l.name))} <span style="color:var(--soft)">+${esc(l.value)}</span></td><td class="n">${Math.round(l.q * 100)}%</td><td class="n">${esc(n0(l.worth))}</td></tr>`).join("") : `<tr><td colspan="4" style="color:var(--soft)">ยังไม่มีออปชัน</td></tr>`);
+  $("#note").textContent = fc && fc.missing ? "ยังใส่ราคาวัตถุดิบไม่ครบ ต้นทุนการตีจึงต่ำกว่าจริง" : used.some(l => !l.weight) ? "บางออปชันยังไม่มีน้ำหนัก จึงคิดเป็น 0" : "ราคานี้เป็นการประเมินเบื้องต้น ใช้เป็นจุดเริ่มต่อรองได้";
+  return { ...r, total, fc };
 }
 
 /* ---------- events ---------- */
@@ -243,9 +313,17 @@ $("#max-btn").addEventListener("click", () => { picks[cur.id].forEach((p, s) => 
 $("#clear-btn").addEventListener("click", () => { picks[cur.id] = cur.slots.map(() => null); $("#preview").hidden = true; $("#drop-text").hidden = false; say($("#ocr-status"), ""); renderSlots(); });
 $("#copy-btn").addEventListener("click", async () => {
   const r = calc(), used = r.lines.filter(Boolean);
-  const txt = `${cur.label}\n` + used.map(l => `- ${l.name} +${l.value}`).join("\n") + `\nราคาประเมิน: ${fmt(r.total, "z")}`;
+  const txt = `${cur.label}${r.fc ? " · " + weapon : ""}\n` + used.map(l => `- ${l.name} +${l.value}`).join("\n") + (r.fc ? `\nต้นทุนการตีเฉลี่ย: ${fmt(r.fc.expected, "z")}` : "") + `\nราคาประเมิน: ${fmt(r.total, "z")}`;
   try { await navigator.clipboard.writeText(txt); $("#copy-btn").textContent = "ก๊อปแล้ว ✓"; } catch (_) { $("#copy-btn").textContent = "ก๊อปไม่ได้"; }
   setTimeout(() => $("#copy-btn").textContent = "ก๊อปผลคำนวณ", 1800);
+});
+
+/* forge cost */
+$("#forge").addEventListener("change", e => { if (e.target.id === "f-weapon") { weapon = e.target.value; store.set("ro-calc-weapon", weapon); renderForge(); calc(); } });
+$("#forge").addEventListener("input", e => {
+  if (e.target.id === "f-rate") { const v = Number(e.target.value); if (v >= 1 && v <= 100) { W["forge|rate"] = v / 100; saveW(); refreshForgeNumbers(); calc(); } return; }
+  const m = e.target.dataset.m; if (!m) return;
+  const v = parsePrice(e.target.value); W["mat|" + m] = v > 0 ? v : 0; saveW(); refreshForgeNumbers(); calc();
 });
 
 /* custom weights */
@@ -307,6 +385,7 @@ async function handleFile(file) {
     let best = { t: cur, m: CALC.matchText(cur, data.text) };
     TYPES.forEach(t => { if (t === cur) return; const m = CALC.matchText(t, data.text); if (m.count > best.m.count) best = { t, m }; });
     if (!best.m.count) return say($("#ocr-status"), "อ่านออปชันไม่เจอ ลองครอปให้เห็นเฉพาะกล่องออปชัน หรือเลือกเองด้านล่าง", "bad");
+    if (best.t.id === "forge") { const low = data.text.toLowerCase(); const hit = RECIPES.map(r => r[0]).filter(n => low.includes(n.toLowerCase())).sort((a, b) => b.length - a.length)[0]; if (hit) { weapon = hit; store.set("ro-calc-weapon", weapon); } }
     cur = best.t; picks[cur.id] = best.m.picks; renderTypes(); renderSlots(); renderOwner();
     say($("#ocr-status"), `อ่านได้ ${best.m.count} ออปชัน (${cur.label}) ตรวจค่าให้ถูกอีกที`, "ok");
   } catch (e) { say($("#ocr-status"), e.message, "bad"); }

@@ -34,6 +34,29 @@
     return { total, lines, cfg };
   }
 
+  /* ---------- ต้นทุนการตีอาวุธ ---------- */
+  // ราคาต่อชิ้นของวัตถุดิบ: ใช้ราคาที่ใส่ไว้ ("mat|ชื่อ") ถ้าไม่มี และทำเองได้ จะคิดจากวัตถุดิบย่อย
+  function unitPrice(name, W, sub, depth) {
+    const own = Number(W["mat|" + name]) || 0;
+    if (own > 0) return { price: own, from: "buy" };
+    const r = sub && sub[name];
+    if (r && (depth || 0) < 4) {
+      let sum = 0;
+      for (const [m, q] of r) { const u = unitPrice(m, W, sub, (depth || 0) + 1); if (!u.price) return { price: 0, from: "missing" }; sum += u.price * q; }
+      return { price: sum, from: "craft" };
+    }
+    return { price: 0, from: "missing" };
+  }
+
+  /** recipe = [ชื่อ, lv, [[วัตถุดิบ, จำนวน]]]; rate = โอกาสสำเร็จ 0..1 */
+  function forgeCost(recipe, W, sub) {
+    if (!recipe) return { lines: [], matCost: 0, rate: 1, expected: 0, missing: 0 };
+    const rate = Math.max(0.01, Math.min(1, Number(W["forge|rate"]) || 0.4));
+    const lines = recipe[2].map(([m, q]) => { const u = unitPrice(m, W, sub); return { name: m, qty: q, unit: u.price, from: u.from, cost: u.price * q }; });
+    const matCost = lines.reduce((a, l) => a + l.cost, 0);
+    return { lines, matCost, rate, expected: Math.round(matCost / rate), missing: lines.filter(l => !l.unit).length };
+  }
+
   /* ---------- OCR matching ---------- */
   const norm = s => String(s).toLowerCase().replace(/\(mhp\)|\(msp\)/g, "").replace(/[^a-z0-9]+/g, " ").trim();
   function bigrams(s) { const t = s.replace(/ /g, ""), out = new Map(); for (let i = 0; i < t.length - 1; i++) { const g = t.slice(i, i + 2); out.set(g, (out.get(g) || 0) + 1); } return out; }
@@ -73,7 +96,7 @@
     return { picks, count: n };
   }
 
-  const api = { DEFAULT_CFG, wkey, quality, optionValue, price, matchText };
+  const api = { DEFAULT_CFG, wkey, quality, optionValue, price, matchText, unitPrice, forgeCost };
   root.CALC = api;
   if (typeof module !== "undefined") module.exports = api;
 })(typeof window !== "undefined" ? window : globalThis);
