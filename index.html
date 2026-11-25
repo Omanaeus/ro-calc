@@ -72,7 +72,7 @@
 .owner .slot .w{display:flex}
 .forge{margin-top:18px;padding-top:16px;border-top:1px solid #5a3d1a}
 .forge[hidden]{display:none}
-.frow{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:10px;margin-bottom:10px}
+.frow{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) minmax(0,1fr);gap:10px;margin-bottom:10px}
 .frow label{display:grid;gap:4px;font-size:13px;color:var(--soft)}
 .frow select,.frow input{width:100%}
 .mats input{width:8.5em;min-height:36px;padding:6px 10px;text-align:right}
@@ -125,6 +125,7 @@
           <div class="frow">
             <label>อาวุธ<select id="f-weapon"></select></label>
             <label>โอกาสตีสำเร็จ (%)<input id="f-rate" type="number" min="1" max="100" step="1" inputmode="numeric"></label>
+            <label>ใส่ Star Crumb (ชิ้น)<select id="f-star"><option value="0">ไม่ใส่</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select></label>
           </div>
           <div class="scroll">
             <table class="bd mats"><thead><tr><th>วัตถุดิบ</th><th class="n">จำนวน</th><th class="n">ราคา/ชิ้น (z)</th><th class="n">รวม</th></tr></thead><tbody id="f-mats"></tbody></table>
@@ -250,13 +251,15 @@ function renderOwner() {
 /* ---------- ต้นทุนการตี ---------- */
 const RECIPES = window.RECIPES || [], SUB = window.SUBRECIPES || {};
 let weapon = store.get("ro-calc-weapon") || "Two-Handed Axe";
-const recipeOf = () => RECIPES.find(r => r[0] === weapon) || null;
+let stars = Math.max(0, Math.min(3, Number(store.get("ro-calc-star")) || 0));
+const recipeOf = () => { const r = RECIPES.find(x => x[0] === weapon); if (!r) return null; return stars ? [r[0], r[1], [...r[2], ["Star Crumb", stars]]] : r; };
 const n0 = v => Math.round(v).toLocaleString("en-US");
 const subNames = () => [...new Set(Object.values(SUB).flat().map(x => x[0]))];
 function renderForge() {
   const on = cur.id === "forge"; $("#forge").hidden = !on; if (!on) return;
   $("#f-weapon").innerHTML = [1, 2, 3].map(lv => `<optgroup label="อาวุธ Lv ${lv}">` + RECIPES.filter(r => r[1] === lv).map(r => `<option value="${esc(r[0])}"${r[0] === weapon ? " selected" : ""}>${esc(r[0])}</option>`).join("") + `</optgroup>`).join("");
   $("#f-rate").value = Math.round((Number(W["forge|rate"]) || 0.4) * 100);
+  $("#f-star").value = String(stars);
   const fc = CALC.forgeCost(recipeOf(), W, SUB);
   $("#f-mats").innerHTML = fc.lines.map(l => {
     const own = Number(W["mat|" + l.name]) || "";
@@ -313,13 +316,15 @@ $("#max-btn").addEventListener("click", () => { picks[cur.id].forEach((p, s) => 
 $("#clear-btn").addEventListener("click", () => { picks[cur.id] = cur.slots.map(() => null); $("#preview").hidden = true; $("#drop-text").hidden = false; say($("#ocr-status"), ""); renderSlots(); });
 $("#copy-btn").addEventListener("click", async () => {
   const r = calc(), used = r.lines.filter(Boolean);
-  const txt = `${cur.label}${r.fc ? " · " + weapon : ""}\n` + used.map(l => `- ${l.name} +${l.value}`).join("\n") + (r.fc ? `\nต้นทุนการตีเฉลี่ย: ${fmt(r.fc.expected, "z")}` : "") + `\nราคาประเมิน: ${fmt(r.total, "z")}`;
+  const txt = `${cur.label}${r.fc ? " · " + weapon : ""}\n` + used.map(l => `- ${l.name} +${l.value}`).join("\n") + (r.fc ? (stars ? `\n+ Star Crumb ×${stars}` : "") + `\nต้นทุนการตีเฉลี่ย: ${fmt(r.fc.expected, "z")}` : "") + `\nราคาประเมิน: ${fmt(r.total, "z")}`;
   try { await navigator.clipboard.writeText(txt); $("#copy-btn").textContent = "ก๊อปแล้ว ✓"; } catch (_) { $("#copy-btn").textContent = "ก๊อปไม่ได้"; }
   setTimeout(() => $("#copy-btn").textContent = "ก๊อปผลคำนวณ", 1800);
 });
 
 /* forge cost */
-$("#forge").addEventListener("change", e => { if (e.target.id === "f-weapon") { weapon = e.target.value; store.set("ro-calc-weapon", weapon); renderForge(); calc(); } });
+$("#forge").addEventListener("change", e => {
+  if (e.target.id === "f-star") { stars = Number(e.target.value) || 0; store.set("ro-calc-star", String(stars)); renderForge(); calc(); return; }
+  if (e.target.id === "f-weapon") { weapon = e.target.value; store.set("ro-calc-weapon", weapon); renderForge(); calc(); } });
 $("#forge").addEventListener("input", e => {
   if (e.target.id === "f-rate") { const v = Number(e.target.value); if (v >= 1 && v <= 100) { W["forge|rate"] = v / 100; saveW(); refreshForgeNumbers(); calc(); } return; }
   const m = e.target.dataset.m; if (!m) return;

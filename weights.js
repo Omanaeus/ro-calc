@@ -170,5 +170,13 @@ window.DEFAULT_WEIGHTS = {
  "shoes|3|Resistance to Demon (%)": 40000,
  "shoes|3|Resistance to Demi-Human (%)": 160000,
  "shoes|3|Resistance to Angel (%)": 40000,
- "shoes|3|Resistance to Dragon (%)": 40000
+ "shoes|3|Resistance to Dragon (%)": 40000,
+ "mat|Oridecon": 10000,
+ "mat|Steel": 20000,
+ "mat|Star Crumb": 10000,
+ "mat|Opal": 30000,
+ "mat|Amethyst": 100000,
+ "mat|Heroic Emblem": 300000,
+ "mat|Zircon": 500000,
+ "mat|Sapphire": 10000
 };
