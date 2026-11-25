@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RO Zero คำนวณราคา</title>
+<meta name="description" content="คำนวณราคาอาวุธตีเหล็กและเกราะ Ragnarok Zero Global ตามออปชันสุ่ม วาง screenshot แล้วรู้ราคาทันที">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chonburi&family=Cinzel:wght@600;700&family=Kanit:wght@500;700&family=Sarabun:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+.ctop{background:linear-gradient(#0b0a1d,#2a2050);border-bottom:3px solid var(--frame);padding-block:22px}
+.ctop .wrap{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between}
+.ctop .logo{margin:0}
+.ctop h1{font-family:Chonburi,Kanit,serif;font-weight:400;font-size:clamp(28px,4vw,42px);line-height:1.15;margin:0;background:linear-gradient(180deg,#fff4cf 10%,#ffd27a 45%,#d4911c 80%);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 2px 0 #4a2c08)}
+.ctop .crest{width:52px}
+.ctop a{color:var(--gold-ink)}
+.types{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:6px}
+.src{color:var(--soft);font-size:14px;margin:0 0 18px}
+.calc{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:24px;align-items:start}
+.panel{background:linear-gradient(180deg,var(--wood1),var(--wood2));border:1px solid #5a3d1a;border-radius:10px;padding:18px;box-shadow:inset 0 0 0 3px #150e09,inset 0 0 0 4px var(--frame)}
+.panel h2{margin:0 0 12px;font-size:20px;font-weight:500;color:var(--gold-ink)}
+.drop{border:2px dashed var(--frame);border-radius:10px;padding:14px;text-align:center;cursor:pointer;background:rgb(0 0 0/.2);display:grid;gap:4px;place-items:center;margin-bottom:16px}
+.drop.over{background:rgb(242 178 48/.12)}
+.drop small{color:var(--soft)}
+.drop img{max-height:160px;border-radius:6px}
+.slot{display:grid;grid-template-columns:4.2em minmax(0,1fr) 7.5em;gap:8px 10px;align-items:center;padding:12px 0;border-top:1px dashed #5a3d1a}
+.slot:first-of-type{border-top:0}
+.slot .lb{font-family:Kanit,sans-serif;color:var(--frame);font-size:15px}
+.slot select,.slot input{width:100%}
+.slot .meter{grid-column:2/-1;display:flex;align-items:center;gap:10px;font-size:13px;color:var(--soft)}
+.bar{flex:1;height:8px;border-radius:99px;background:#150e09;border:1px solid #4a3826;overflow:hidden}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,#8a5a00,var(--gold),#fff1c1);width:0;transition:width .25s}
+.slot .w{grid-column:2/-1;display:none;align-items:center;gap:8px;font-size:14px;color:var(--soft)}
+.owner .slot .w{display:flex}
+.slot .w input{width:11em;min-height:36px;padding:6px 10px}
+.res{position:sticky;top:16px}
+.big{font-family:Kanit,sans-serif;font-weight:700;font-size:clamp(40px,6vw,60px);line-height:1;color:var(--gold-ink);text-shadow:0 0 18px rgb(242 178 48/.45);white-space:nowrap;margin:4px 0 2px}
+.big small{font-size:.4em;color:var(--soft);font-weight:500;text-shadow:none}
+.grade{font-size:15px;color:var(--soft);margin:0 0 14px}
+.bd{width:100%;border-collapse:collapse;font-size:14px}
+.bd th{color:var(--soft);font-weight:400;text-align:left;padding:6px 4px;border-bottom:1px solid #4a3826}
+.bd td{padding:7px 4px;border-bottom:1px dashed #3a2a1c;vertical-align:top}
+.bd .n{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.note{font-size:13px;color:var(--soft);margin:12px 0 0}
+.cfg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:14px}
+.cfg label{display:grid;gap:4px;font-size:13px;color:var(--soft)}
+.cfg input{width:100%}
+.ownerbox{display:none;margin-top:16px;padding-top:14px;border-top:1px solid #5a3d1a}
+.owner .ownerbox{display:block}
+.wt{display:grid;gap:4px;max-height:420px;overflow:auto;margin-top:10px;padding-right:4px}
+.wt h3{font-size:14px;color:var(--frame);margin:10px 0 2px;font-weight:500}
+.wt .r{display:grid;grid-template-columns:minmax(0,1fr) 9.5em;gap:8px;align-items:center;font-size:14px}
+.wt .r span{color:var(--ink)}
+.wt .r small{color:var(--soft)}
+.wt input{min-height:36px;padding:6px 10px;width:100%}
+.status{font-size:14px;margin:10px 0 0;min-height:1.4em}
+.status.ok{color:var(--ok)}.status.bad{color:var(--bad)}
+.toggle{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--soft)}
+.toggle input{width:20px;height:20px;min-height:0}
+.formula{background:var(--bg2);border-top:1px solid var(--line)}
+.formula .wrap{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px 32px}
+.formula h2{font-size:20px;margin:0 0 6px;font-weight:500;color:var(--gold-ink)}
+.formula p,.formula li{color:var(--soft);margin:0}
+.formula code{color:var(--ink);background:#0b0a1d;padding:1px 6px;border-radius:4px}
+@media(max-width:860px){.calc{grid-template-columns:minmax(0,1fr)}.res{position:static;order:-1}}
+@media(max-width:480px){.slot{grid-template-columns:minmax(0,1fr) 6.5em}.slot .lb{grid-column:1/-1}.slot .meter,.slot .w{grid-column:1/-1}.cfg{grid-template-columns:minmax(0,1fr)}}
+.mine{display:none;margin-left:8px;font-size:13px;background:rgb(242 178 48/.15);color:var(--gold-ink);border:1px solid var(--frame);border-radius:999px;padding:2px 10px;white-space:nowrap}
+.custom .mine{display:inline-block}
+.share textarea{width:100%;min-height:70px;font-size:13px;font-family:ui-monospace,monospace;margin-top:8px}
+.owner .slot .w{display:flex}
+</style>
+</head>
+<body>
+<header class="ctop">
+  <div class="wrap">
+    <div class="logo">
+      <svg class="crest" viewBox="0 0 64 72" aria-hidden="true"><path d="M32 3l26 9v20c0 17-11 30-26 37C17 62 6 49 6 32V12z" fill="#2a1d16" stroke="#f2b230" stroke-width="3"/><path d="M32 10l19 6.5V32c0 12-8 22-19 28-11-6-19-16-19-28V16.5z" fill="none" stroke="#b8893c" stroke-width="1.2"/><path d="M14 54l28-34 3 2-28 34z" fill="#dfe6ee"/><path d="M50 54L22 20l-3 2 28 34z" fill="#c9d2dc"/><circle cx="32" cy="44" r="9" fill="#f2b230" stroke="#8a5a00" stroke-width="1.5"/><text x="32" y="48" text-anchor="middle" font-size="11" font-family="Cinzel,serif" font-weight="700" fill="#8a5a00">z</text></svg>
+      <div><h1>คำนวณราคาอุปกรณ์</h1><div class="sublogo">Ragnarok Zero Global · Random Option Price</div></div>
+    </div>
+  </div>
+</header>
+
+<main class="band" id="main">
+  <div class="wrap">
+    <div class="types" id="types" role="group" aria-label="ประเภทอุปกรณ์"></div>
+    <p class="src" id="src"></p>
+
+    <div class="calc">
+      <section class="panel">
+        <h2>ออปชันของไอเทม</h2>
+        <div class="drop" id="drop" tabindex="0" role="button" aria-label="วางหรือเลือกรูป screenshot">
+          <span id="drop-text"><b>วางรูป (Ctrl+V)</b> หรือลากรูป tooltip มาวาง ระบบจะเลือกออปชันให้</span>
+          <small>รูปอ่านในเบราว์เซอร์ของคุณ ไม่ถูกส่งไปที่ไหน</small>
+          <img id="preview" alt="รูปที่เลือก" hidden>
+        </div>
+        <input id="file" type="file" accept="image/*" hidden>
+        <p class="status" id="ocr-status" style="margin:-6px 0 6px"></p>
+        <div id="slots"></div>
+        <div class="acts" style="justify-content:flex-start;margin-top:10px">
+          <button class="btn ghost small" id="max-btn" type="button">ใส่ค่าสูงสุดทุกช่อง</button>
+          <button class="btn ghost small" id="clear-btn" type="button">ล้างทั้งหมด</button>
+        </div>
+      </section>
+
+      <aside class="panel res" aria-live="polite">
+        <h2>ราคาประเมิน <span class="mine">ใช้น้ำหนักของคุณ</span></h2>
+        <div class="big" id="total">0 <small>z</small></div>
+        <p class="grade" id="grade">เลือกออปชันทางซ้ายเพื่อเริ่มคำนวณ</p>
+        <div class="scroll">
+          <table class="bd"><thead><tr><th>ช่อง</th><th>ออปชัน</th><th class="n">คุณภาพ</th><th class="n">มูลค่า</th></tr></thead><tbody id="bd"></tbody></table>
+        </div>
+        <div class="acts" style="justify-content:flex-start;margin-top:14px"><button class="btn small" id="copy-btn" type="button">ก๊อปผลคำนวณ</button></div>
+        <p class="note" id="note">ราคานี้เป็นการประเมินเบื้องต้น ใช้เป็นจุดเริ่มต่อรองได้</p>
+
+        <label class="toggle" style="margin-top:14px"><input type="checkbox" id="owner"> ปรับน้ำหนักราคาเอง</label>
+        <div class="ownerbox">
+          <p class="note" style="margin:0 0 4px">ค่าที่ปรับจะเก็บในเบราว์เซอร์นี้เท่านั้น คนอื่นไม่เห็น</p>
+          <h2 style="font-size:17px;margin:8px 0 0">ตั้งค่าของ <span id="cfg-type"></span></h2>
+          <div class="cfg">
+            <label>ราคาฐาน (z)<input id="c-base" inputmode="decimal" placeholder="เช่น 500k"></label>
+            <label>ความชัน k<input id="c-k" type="number" step="0.1" min="0.1" max="5"></label>
+            <label>มูลค่าขั้นต่ำ<input id="c-floor" type="number" step="0.05" min="0" max="1"></label>
+          </div>
+          <div class="wt" id="wt"></div>
+          <div class="acts" style="justify-content:flex-start;margin-top:12px">
+            <button class="btn ghost small" id="reset-w" type="button">กลับค่าเริ่มต้น</button>
+            <button class="btn ghost small" id="export-w" type="button">ก๊อปโค้ดน้ำหนัก</button>
+            <button class="btn ghost small" id="import-w" type="button">วางโค้ดน้ำหนัก</button>
+            <button class="btn ghost small" id="file-w" type="button">บันทึกเป็น weights.js</button>
+          </div>
+          <div class="share" id="share" hidden>
+            <label for="share-txt" class="vh">โค้ดน้ำหนัก</label>
+            <textarea id="share-txt" placeholder="วางโค้ดน้ำหนักที่ได้จากเพื่อนตรงนี้"></textarea>
+            <div class="acts" style="justify-content:flex-start;margin-top:8px"><button class="btn small" id="apply-w" type="button">ใช้โค้ดนี้</button></div>
+          </div>
+          <p class="status" id="save-status"></p>
+        </div>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<section class="band formula">
+  <div class="wrap">
+    <div><h2>คิดราคายังไง</h2><p>แต่ละออปชันมี "น้ำหนัก" คือราคาเมื่อ roll ได้ค่าสูงสุด ยิ่ง roll ได้ใกล้ค่าสูงสุด ยิ่งได้มูลค่าเต็มน้ำหนัก แล้วรวมทุกช่องกับราคาฐานของอุปกรณ์</p></div>
+    <div><h2>สูตร</h2>
+      <p><code>q = (ค่าที่ได้ − ต่ำสุด) ÷ (สูงสุด − ต่ำสุด)</code></p>
+      <p style="margin-top:6px"><code>มูลค่า = น้ำหนัก × (ขั้นต่ำ + (1 − ขั้นต่ำ) × q<sup>k</sup>)</code></p>
+      <p style="margin-top:6px"><code>ราคา = ราคาฐาน + ผลรวมมูลค่าทุกช่อง</code></p>
+    </div>
+    <div><h2>ข้อมูลออปชัน</h2><p>ช่วงค่าออปชันจาก rozerodb.com ซึ่งแจ้งว่ายังตรวจสอบกับข้อมูลในเกมอยู่ อาจคลาดเคลื่อนได้บ้าง ราคาที่ได้เป็นค่าประมาณ ไม่ใช่ราคาตลาดจริง</p></div>
+  </div>
+</section>
+
+<footer>เครื่องมือนี้ทำโดยผู้เล่น ไม่ได้เกี่ยวข้องกับ Gravity หรือผู้ให้บริการเกม</footer>
+
+<script src="common.js"></script>
+<script src="affixes.js"></script>
+<script src="weights.js"></script>
+<script src="calc-core.js"></script>
+<script>
+{
+const { esc, fmt, parsePrice } = RO;
+const $ = s => document.querySelector(s);
+const TESS = "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js";
+const TYPES = window.AFFIXES, DEF = window.DEFAULT_WEIGHTS || {}, LS = "ro-calc-weights";
+const store = { get: k => { try { return localStorage.getItem(k) || ""; } catch (_) { return ""; } }, set: (k, v) => { try { v ? localStorage.setItem(k, v) : localStorage.removeItem(k); } catch (_) {} } };
+let W = {}, cur = TYPES[0], picks = {}, worker = null;
+TYPES.forEach(t => picks[t.id] = t.slots.map(() => null));
+
+function loadW() {
+  W = Object.assign({}, DEF);
+  let mine = null; try { mine = JSON.parse(store.get(LS) || "null"); } catch (_) {}
+  if (mine && typeof mine === "object") Object.keys(mine).forEach(k => { const v = Number(mine[k]); if (isFinite(v)) W[k] = v; });
+  document.body.classList.toggle("custom", !!mine);
+}
+function saveW() {
+  const diff = {}; Object.keys(W).forEach(k => { if (Number(W[k]) !== Number(DEF[k] ?? 0)) diff[k] = Number(W[k]) || 0; });
+  store.set(LS, Object.keys(diff).length ? JSON.stringify(diff) : "");
+  document.body.classList.toggle("custom", Object.keys(diff).length > 0);
+}
+const cfgOf = t => ({ base: Number(W[t.id + "|base"]) || 0, k: Number(W[t.id + "|k"]) || CALC.DEFAULT_CFG.k, floor: W[t.id + "|floor"] !== undefined && W[t.id + "|floor"] !== "" ? Number(W[t.id + "|floor"]) : CALC.DEFAULT_CFG.floor });
+const short = n => String(n).replace(/ \(%\)$/, " %");
+const say = (el, m, kind) => { el.textContent = m || ""; el.className = "status" + (kind ? " " + kind : ""); };
+
+/* ---------- render ---------- */
+function renderTypes() {
+  $("#types").innerHTML = TYPES.map(t => `<button type="button" class="chip" data-t="${t.id}" aria-pressed="${t === cur}">${esc(t.label)}</button>`).join("");
+  $("#src").textContent = "แหล่งออปชัน: " + cur.source + " · " + cur.slots.length + " ช่อง";
+  $("#cfg-type").textContent = cur.label;
+}
+function renderSlots() {
+  const P = picks[cur.id];
+  $("#slots").innerHTML = cur.slots.map((pool, s) => {
+    const p = P[s], opt = p && pool.find(o => o[0] === p.name);
+    return `<div class="slot" data-s="${s}">
+      <label class="lb" for="o-${s}">ช่อง ${s + 1}</label>
+      <select id="o-${s}" data-f="name"><option value="">— ไม่มีออปชัน —</option>${pool.map(o => `<option value="${esc(o[0])}"${opt && opt[0] === o[0] ? " selected" : ""}>${esc(short(o[0]))}</option>`).join("")}</select>
+      <label class="vh" for="v-${s}">ค่าของช่อง ${s + 1}</label>
+      <input id="v-${s}" data-f="value" type="number" inputmode="decimal" ${opt ? `min="${opt[1]}" max="${opt[2]}" value="${esc(p.value)}" placeholder="${opt[1]}–${opt[2]}"` : "disabled placeholder=\"ค่า\""}>
+      <div class="meter"><span class="bar"><i id="q-${s}"></i></span><span style="white-space:nowrap">${opt ? `ช่วง ${opt[1]}–${opt[2]}` : ""}</span></div>
+      <div class="w"><label for="w-${s}">น้ำหนัก (ราคาที่ค่าสูงสุด)</label><input id="w-${s}" data-f="w" inputmode="decimal" ${opt ? `value="${esc(W[CALC.wkey(cur.id, s, opt[0])] || "")}"` : "disabled"} placeholder="z"></div>
+    </div>`;
+  }).join("");
+  calc();
+}
+function renderOwner() {
+  const c = cfgOf(cur);
+  $("#c-base").value = c.base || ""; $("#c-k").value = c.k; $("#c-floor").value = c.floor;
+  $("#wt").innerHTML = cur.slots.map((pool, s) => `<h3>ช่อง ${s + 1}</h3>` + pool.map(o => {
+    const k = CALC.wkey(cur.id, s, o[0]);
+    return `<div class="r"><span>${esc(short(o[0]))} <small>${o[1]}–${o[2]}</small></span><input data-k="${esc(k)}" inputmode="decimal" value="${esc(W[k] || "")}" placeholder="0" aria-label="น้ำหนัก ${esc(o[0])}"></div>`;
+  }).join("")).join("");
+}
+function calc() {
+  const r = CALC.price(cur, picks[cur.id], W, cfgOf(cur));
+  $("#total").innerHTML = esc(Math.round(r.total).toLocaleString("en-US")) + " <small>z</small>";
+  const used = r.lines.filter(Boolean);
+  r.lines.forEach((l, s) => { const q = $("#q-" + s); if (q) q.style.width = (l ? l.q * 100 : 0) + "%"; });
+  const avg = used.length ? used.reduce((a, l) => a + l.q, 0) / used.length : 0;
+  $("#grade").textContent = used.length ? `${used.length}/${cur.slots.length} ช่อง · คุณภาพ roll เฉลี่ย ${Math.round(avg * 100)}%` + (r.cfg.base ? ` · ราคาฐาน ${fmt(r.cfg.base, "z")}` : "") : "เลือกออปชันทางซ้ายเพื่อเริ่มคำนวณ";
+  $("#bd").innerHTML = used.length ? used.map(l => `<tr><td>${l.slot + 1}</td><td>${esc(short(l.name))} <span style="color:var(--soft)">+${esc(l.value)}</span></td><td class="n">${Math.round(l.q * 100)}%</td><td class="n">${esc(l.worth.toLocaleString("en-US"))}</td></tr>`).join("") : `<tr><td colspan="4" style="color:var(--soft)">ยังไม่มีออปชัน</td></tr>`;
+  $("#note").textContent = used.some(l => !l.weight) ? "บางออปชันยังไม่มีน้ำหนัก จึงคิดเป็น 0" : "ราคานี้เป็นการประเมินเบื้องต้น ใช้เป็นจุดเริ่มต่อรองได้";
+  return r;
+}
+
+/* ---------- events ---------- */
+$("#types").addEventListener("click", e => { const b = e.target.closest("[data-t]"); if (!b) return; cur = TYPES.find(t => t.id === b.dataset.t); renderTypes(); renderSlots(); renderOwner(); });
+$("#slots").addEventListener("change", e => {
+  const row = e.target.closest(".slot"); if (!row || e.target.dataset.f !== "name") return; const s = +row.dataset.s;
+  const opt = cur.slots[s].find(o => o[0] === e.target.value);
+  picks[cur.id][s] = opt ? { name: opt[0], value: opt[2] } : null; renderSlots();
+  const v = $("#v-" + s); if (v && !v.disabled) v.select();
+});
+$("#slots").addEventListener("input", e => {
+  const row = e.target.closest(".slot"); if (!row) return; const s = +row.dataset.s, p = picks[cur.id][s];
+  if (e.target.dataset.f === "value" && p) { p.value = e.target.value === "" ? "" : Number(e.target.value); calc(); }
+  if (e.target.dataset.f === "w" && p) { const v = parsePrice(e.target.value); W[CALC.wkey(cur.id, s, p.name)] = v >= 0 ? v : 0; saveW(); calc(); renderOwner(); }
+});
+$("#max-btn").addEventListener("click", () => { picks[cur.id].forEach((p, s) => { if (p) p.value = cur.slots[s].find(x => x[0] === p.name)[2]; }); renderSlots(); });
+$("#clear-btn").addEventListener("click", () => { picks[cur.id] = cur.slots.map(() => null); $("#preview").hidden = true; $("#drop-text").hidden = false; say($("#ocr-status"), ""); renderSlots(); });
+$("#copy-btn").addEventListener("click", async () => {
+  const r = calc(), used = r.lines.filter(Boolean);
+  const txt = `${cur.label}\n` + used.map(l => `- ${l.name} +${l.value}`).join("\n") + `\nราคาประเมิน: ${fmt(r.total, "z")}`;
+  try { await navigator.clipboard.writeText(txt); $("#copy-btn").textContent = "ก๊อปแล้ว ✓"; } catch (_) { $("#copy-btn").textContent = "ก๊อปไม่ได้"; }
+  setTimeout(() => $("#copy-btn").textContent = "ก๊อปผลคำนวณ", 1800);
+});
+
+/* custom weights */
+$("#owner").addEventListener("change", e => { document.body.classList.toggle("owner", e.target.checked); renderOwner(); renderSlots(); });
+[["#c-base", "base"], ["#c-k", "k"], ["#c-floor", "floor"]].forEach(([sel, f]) => $(sel).addEventListener("input", e => { const v = f === "base" ? parsePrice(e.target.value) : Number(e.target.value); if (v >= 0) { W[cur.id + "|" + f] = v; saveW(); calc(); } }));
+$("#wt").addEventListener("input", e => {
+  const k = e.target.dataset.k; if (!k) return; const v = parsePrice(e.target.value); W[k] = v >= 0 ? v : 0; saveW(); calc();
+  picks[cur.id].forEach((x, s) => { if (x && CALC.wkey(cur.id, s, x.name) === k) { const wi = $("#w-" + s); if (wi) wi.value = W[k] || ""; } });
+});
+let resetArm = false;
+$("#reset-w").addEventListener("click", () => {
+  if (!resetArm) { resetArm = true; $("#reset-w").textContent = "กดอีกครั้งเพื่อยืนยัน"; setTimeout(() => { resetArm = false; $("#reset-w").textContent = "กลับค่าเริ่มต้น"; }, 3000); return; }
+  resetArm = false; $("#reset-w").textContent = "กลับค่าเริ่มต้น"; store.set(LS, ""); loadW(); renderSlots(); renderOwner(); say($("#save-status"), "กลับเป็นค่าเริ่มต้นแล้ว", "ok");
+});
+$("#export-w").addEventListener("click", async () => {
+  const code = JSON.stringify(W);
+  $("#share").hidden = false; $("#share-txt").value = code;
+  try { await navigator.clipboard.writeText(code); say($("#save-status"), "ก๊อปโค้ดน้ำหนักแล้ว ส่งให้เพื่อนวางที่ปุ่ม \"วางโค้ดน้ำหนัก\" ได้", "ok"); }
+  catch (_) { $("#share-txt").select(); say($("#save-status"), "กด Ctrl+C เพื่อก๊อปโค้ด", "ok"); }
+});
+$("#import-w").addEventListener("click", () => { $("#share").hidden = false; $("#share-txt").value = ""; $("#share-txt").focus(); });
+$("#apply-w").addEventListener("click", () => {
+  try {
+    const obj = JSON.parse($("#share-txt").value);
+    if (!obj || typeof obj !== "object" || Array.isArray(obj)) throw 0;
+    let n = 0; Object.keys(obj).forEach(k => { const v = Number(obj[k]); if (/^[a-z]+\|/.test(k) && isFinite(v) && v >= 0) { W[k] = v; n++; } });
+    if (!n) throw 0;
+    saveW(); renderSlots(); renderOwner(); $("#share").hidden = true; say($("#save-status"), `ใช้โค้ดแล้ว (${n} ค่า)`, "ok");
+  } catch (_) { say($("#save-status"), "โค้ดไม่ถูกต้อง ลองก๊อปมาใหม่ทั้งหมด", "bad"); }
+});
+$("#file-w").addEventListener("click", () => {
+  const js = "// น้ำหนักราคาเริ่มต้นที่ทุกคนเห็น\nwindow.DEFAULT_WEIGHTS = " + JSON.stringify(W, null, 1) + ";\n";
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([js], { type: "text/javascript" })); a.download = "weights.js";
+  document.body.appendChild(a); a.click(); a.remove();
+  say($("#save-status"), "ได้ไฟล์ weights.js แล้ว อัปขึ้น GitHub ทับไฟล์เดิมเพื่อให้ทุกคนใช้ค่านี้", "ok");
+});
+
+/* ---------- screenshot ---------- */
+function loadScript(src) { return new Promise((ok, no) => { const s = document.createElement("script"); s.src = src; s.onload = ok; s.onerror = () => no(new Error("โหลดตัวอ่านรูปไม่สำเร็จ")); document.head.appendChild(s); }); }
+function readImage(file) { return new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => no(new Error("เปิดรูปไม่ได้")); i.src = URL.createObjectURL(file); }); }
+function forOcr(img) {
+  const s = Math.min(2.5, 2400 / img.naturalWidth), c = document.createElement("canvas");
+  c.width = Math.round(img.naturalWidth * s); c.height = Math.round(img.naturalHeight * s);
+  const g = c.getContext("2d"); g.imageSmoothingQuality = "high"; g.drawImage(img, 0, 0, c.width, c.height);
+  const d = g.getImageData(0, 0, c.width, c.height), p = d.data; let sum = 0;
+  for (let i = 0; i < p.length; i += 4) { const y = 0.299 * p[i] + 0.587 * p[i + 1] + 0.114 * p[i + 2]; p[i] = p[i + 1] = p[i + 2] = y; sum += y; }
+  if (sum / (p.length / 4) < 110) for (let i = 0; i < p.length; i += 4) p[i] = p[i + 1] = p[i + 2] = 255 - p[i];
+  g.putImageData(d, 0, 0); return c;
+}
+async function handleFile(file) {
+  if (!file || !/^image\//.test(file.type)) return say($("#ocr-status"), "ต้องเป็นไฟล์รูปเท่านั้น", "bad");
+  try {
+    const img = await readImage(file);
+    $("#preview").src = img.src; $("#preview").hidden = false; $("#drop-text").hidden = true;
+    say($("#ocr-status"), "กำลังอ่านรูป… (ครั้งแรกประมาณ 10–20 วินาที)");
+    if (!window.Tesseract) await loadScript(TESS);
+    if (!worker) worker = await Tesseract.createWorker("eng");
+    const { data } = await worker.recognize(forOcr(img));
+    let best = { t: cur, m: CALC.matchText(cur, data.text) };
+    TYPES.forEach(t => { if (t === cur) return; const m = CALC.matchText(t, data.text); if (m.count > best.m.count) best = { t, m }; });
+    if (!best.m.count) return say($("#ocr-status"), "อ่านออปชันไม่เจอ ลองครอปให้เห็นเฉพาะกล่องออปชัน หรือเลือกเองด้านล่าง", "bad");
+    cur = best.t; picks[cur.id] = best.m.picks; renderTypes(); renderSlots(); renderOwner();
+    say($("#ocr-status"), `อ่านได้ ${best.m.count} ออปชัน (${cur.label}) ตรวจค่าให้ถูกอีกที`, "ok");
+  } catch (e) { say($("#ocr-status"), e.message, "bad"); }
+}
+const drop = $("#drop");
+drop.addEventListener("click", () => $("#file").click());
+drop.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); $("#file").click(); } });
+$("#file").addEventListener("change", e => handleFile(e.target.files[0]));
+drop.addEventListener("dragover", e => { e.preventDefault(); drop.classList.add("over"); });
+drop.addEventListener("dragleave", () => drop.classList.remove("over"));
+drop.addEventListener("drop", e => { e.preventDefault(); drop.classList.remove("over"); handleFile(e.dataTransfer.files[0]); });
+document.addEventListener("paste", e => { if (e.target.closest && e.target.closest("textarea,input")) return; const f = [...(e.clipboardData?.files || [])].find(f => /^image\//.test(f.type)); if (f) { e.preventDefault(); handleFile(f); } });
+
+/* ---------- start (ตัวอย่างเริ่มต้นให้เห็นการทำงาน) ---------- */
+picks.forge = [{ name: "Physical Damage to Fire enemies (%)", value: 38 }, { name: "ASPD", value: 2 }, { name: "Phys Damage to Demi-Human monsters (%)", value: 41 }, null];
+loadW(); renderTypes(); renderSlots(); renderOwner();
+}
+</script>
+</body>
+</html>
