@@ -57,6 +57,80 @@
     return { lines, matCost, rate, expected: Math.round(matCost / rate), missing: lines.filter(l => !l.unit).length };
   }
 
+  /* ---------- อาวุธตีเหล็ก: ค่าพลัง (power index) ---------- */
+  // บทบาทของออปชัน: speed = ความเร็วโจมตี, mult = ตัวคูณแยก (ระยะไกล), slot4 = ทะลุเกราะ, add = บวกรวมในก้อนดาเมจ
+  function roleOf(slot, name) {
+    if (slot === 3) return "slot4";
+    if (/^ASPD/.test(name)) return "speed";
+    if (/^Long-range/.test(name)) return "mult";
+    return "add";
+  }
+  const raceOf = n => (String(n).match(/(Formless|Undead|Brute|Plant|Insect|Fish|Demon|Demi-Human|Angel|Dragon)/) || [])[1] || "";
+
+  /**
+   * ตัวคูณดาเมจ = (1 + Σ ω·ค่า%) × Π(1 + ω·ค่า%)[ระยะไกล]
+   * ความเร็ว     = 1 + Σ ω·ค่า         [ASPD +n, ASPD %]
+   * ช่อง 4       = 1 + c·ค่า%          [c สูงกว่าถ้าเผ่าตรงกับช่อง 3]
+   * ค่าพลัง      = ตัวคูณดาเมจ × ความเร็ว × ช่อง 4
+   */
+  // ω เฉพาะอาวุธ: "forge@ชื่ออาวุธ|ช่อง|ออปชัน" (ถ้ามีอย่างน้อย 1 ค่า ถือว่าอาวุธนี้ใช้ ω ของตัวเองทั้งชุด)
+  const hasOwnOmega = (W, weapon) => !!weapon && Object.keys(W).some(k => k.startsWith("forge@" + weapon + "|"));
+  const omegaKey = (W, weapon, slot, name) => hasOwnOmega(W, weapon) ? "forge@" + weapon + "|" + (slot + 1) + "|" + name : wkey("forge", slot, name);
+  function forgePower(type, picks, W, weapon) {
+    let add = 0, mult = 1, speed = 1, s4 = 1; const lines = [];
+    const race3 = picks[2] ? raceOf(picks[2].name) : "";
+    type.slots.forEach((pool, s) => {
+      const p = picks[s]; if (!p || !p.name) return;
+      const opt = pool.find(o => o[0] === p.name); if (!opt) return;
+      const v = Math.max(0, Number(p.value) || 0), role = roleOf(s, opt[0]);
+      const k = omegaKey(W, weapon, s, opt[0]);
+      const w = Number(W[k] ?? W[wkey(type.id, s, opt[0])]); const om = isFinite(w) ? w : 0;
+      let eff = 0;
+      if (role === "add") { eff = om * v / 100; add += eff; }
+      else if (role === "mult") { eff = om * v / 100; mult *= 1 + eff; }
+      else if (role === "speed") { eff = om * v; speed += eff; }
+      else { const match = race3 && raceOf(opt[0]) === race3; const c = Number(W[match ? "forge|s4match" : "forge|s4other"]) || 0; eff = c * v / 100; s4 *= 1 + eff; }
+      lines.push({ slot: s, name: opt[0], value: v, min: opt[1], max: opt[2], q: quality(v, opt[1], opt[2]), role, omega: om, eff });
+    });
+    const dmg = (1 + add) * mult;
+    return { lines, add, mult, dmg, speed, s4, power: dmg * speed * s4 };
+  }
+
+  // เส้นราคา: จุดอ้างอิง "curve|ค่าพลัง" = ราคา (z) ต่อกันแบบ log; นอกช่วงใช้ความชันของช่วงริมสุด
+  // เส้นของอาวุธเฉพาะตัว: "curve@ชื่ออาวุธ|ค่าพลัง"; ไม่มีก็ใช้เส้นกลาง "curve|ค่าพลัง"
+  const curvePrefix = weapon => "curve" + (weapon ? "@" + weapon : "") + "|";
+  function anchors(W, weapon) {
+    const pre = curvePrefix(weapon);
+    return Object.keys(W).filter(k => k.startsWith(pre)).map(k => [Number(k.slice(pre.length)), Number(W[k])]).filter(a => a[0] > 0 && a[1] > 0).sort((a, b) => a[0] - b[0]);
+  }
+  const hasOwnCurve = (W, weapon) => !!weapon && anchors(W, weapon).length >= 2;
+  function curvePrice(P, W, weapon) {
+    const A = anchors(W, weapon); if (!A.length) return 0; if (A.length === 1) return A[0][1];
+    let i = A.findIndex(a => a[0] >= P);
+    if (i === 0) i = 1; else if (i < 0) i = A.length - 1;
+    const [p0, z0] = A[i - 1], [p1, z1] = A[i];
+    const t = (P - p0) / (p1 - p0);
+    return Math.max(0, Math.exp(Math.log(z0) + t * (Math.log(z1) - Math.log(z0))));
+  }
+
+  // ค่าตีบวก: "refine|ระดับ" = ราคาใบการันตี (บาท) บวกตรงๆ แปลงเป็น z ด้วย "thb|perM"
+  function refineZ(level, W) {
+    const baht = Number(W["refine|" + level]) || 0, rate = Number(W["thb|perM"]) || 0;
+    return baht && rate ? Math.round(baht / rate * 1e6) : 0;
+  }
+  // "+9 Very Very ..." บรรทัดชื่อไอเทม → 9
+  function refineFromText(text) { const m = String(text || "").match(/(?:^|\n)\s*\+\s?(\d{1,2})\s+[A-Za-z]/); return m ? Math.min(20, parseInt(m[1], 10)) : 0; }
+
+  function forgePrice(type, picks, W, recipe, sub, refine) {
+    const name = recipe ? recipe[0] : "", own = hasOwnCurve(W, name);
+    const pw = forgePower(type, picks, W, name);
+    const demand = own ? 1 : name && W["demand|" + name] !== undefined ? Number(W["demand|" + name]) : Number(W["demand|*"] ?? 1);
+    const market = Math.round(curvePrice(pw.power, W, own ? name : "") * (isFinite(demand) ? demand : 1));
+    const fc = forgeCost(recipe, W, sub);
+    const rz = refineZ(refine || 0, W);
+    return { ...pw, own, demand, market, fc, refine: refine || 0, refineZ: rz, total: Math.max(market, fc.expected) + rz, floored: fc.expected > market };
+  }
+
   /* ---------- OCR matching ---------- */
   const norm = s => String(s).toLowerCase().replace(/\(mhp\)|\(msp\)/g, "").replace(/[^a-z0-9]+/g, " ").trim();
   function bigrams(s) { const t = s.replace(/ /g, ""), out = new Map(); for (let i = 0; i < t.length - 1; i++) { const g = t.slice(i, i + 2); out.set(g, (out.get(g) || 0) + 1); } return out; }
@@ -67,7 +141,8 @@
     return na + nb ? 2 * inter / (na + nb) : 0;
   }
   // ชื่อเรียกอื่นที่มักเจอใน tooltip
-  const ALIAS = [[/\bmax\s*hp\b|\bmhp\b/g, "maxhp"], [/\bmax\s*sp\b|\bmsp\b/g, "maxsp"], [/\bcrit(ical)?\b(?! damage)/g, "cri"], [/demi\s*human/g, "demi human"]];
+  const ALIAS = [[/\bmax\s*hp\b|\bmhp\b/g, "maxhp"], [/\bmax\s*sp\b|\bmsp\b/g, "maxsp"], [/\bcrit(ical)?\b(?! damage)/g, "cri"], [/demi\s*human/g, "demi human"],
+    [/\bphysical\b/g, "phys"], [/\bdefen[cs]e\b/g, "def"], [/\bphys\s+def\s+of\s+(?:the\s+)?([a-z][a-z ]*?)\s+(?:monsters?|enemies|race|targets?)\b/g, "$1 phys def"], [/\bagainst\b/g, "to"], [/\b(small|medium|large)\s+size(?:d)?\s+(?:enemies|monsters|targets)\b/g, "$1 targets"]];
   function canon(s) { let t = norm(s); ALIAS.forEach(([re, r]) => t = t.replace(re, r)); return t; }
 
   /** อ่านทีละบรรทัด หาออปชันที่ตรงที่สุด + ตัวเลข แล้ววางลงช่องที่ว่าง */
@@ -75,7 +150,19 @@
     const cands = [];
     type.slots.forEach((pool, s) => pool.forEach(o => cands.push({ s, o, c: canon(o[0]).replace(/\s*\b(?:increase|reduction)\b\s*/g, " ").trim(), pct: /%/.test(o[0]) })));
     const found = [];
-    String(text || "").split(/\r?\n/).forEach(raw => {
+    // รวมบรรทัดที่ถูกตัดกลาง (เช่น "... Monsters +" แล้วขึ้นบรรทัดใหม่ "4%")
+    const rawLines = String(text || "").split(/\r?\n/).map(l => l.trim()).filter(Boolean), lines = [];
+    rawLines.forEach(l => {
+      const prev = lines[lines.length - 1];
+      if (prev === undefined || /:/.test(prev)) return lines.push(l);
+      if (/^%$/.test(l)) lines[lines.length - 1] = prev + "%";                                   // "+32" / "%"
+      else if (/\d$/.test(prev) && /^\d+(?:\.\d+)?\s*%$/.test(l)) lines[lines.length - 1] = prev + l; // "+1" / "8%"
+      else if (/[+\-]\s*$/.test(prev) || /^[+\-]?\s*\d+(?:\.\d+)?\s*%?$/.test(l) && !/\d/.test(prev)) lines[lines.length - 1] = prev + " " + l;
+      else lines.push(l);
+    });
+    lines.forEach(raw => {
+      if (/:/.test(raw)) return; // บรรทัดข้อมูลไอเทม เช่น "ATK : 140" ไม่ใช่ออปชัน
+      raw = raw.replace(/\([^)]*[a-z][^)]*\)/gi, " "); // ตัดคำอธิบายในวงเล็บ เช่น "(After Attack Delay Reduction)"
       const nums = raw.match(/\d+(?:\.\d+)?/g); if (!nums) return;
       const hasPct = /%/.test(raw);
       const line = canon(raw.replace(/[+\-]?\d+(?:\.\d+)?\s*%?/g, " ")).replace(/\s*\b(?:increase|reduction)\b\s*/g, " ").trim();
@@ -96,7 +183,10 @@
     return { picks, count: n };
   }
 
-  const api = { DEFAULT_CFG, wkey, quality, optionValue, price, matchText, unitPrice, forgeCost };
+  /** นับ "Very" หน้าคำว่า Strong = จำนวน Star Crumb */
+  function starsFromText(text) { const m = String(text || "").match(/((?:very\s*)+)strong/i); return m ? Math.min(3, (m[1].match(/very/gi) || []).length) : 0; }
+
+  const api = { refineZ, refineFromText, hasOwnOmega, omegaKey, curvePrefix, hasOwnCurve, roleOf, forgePower, curvePrice, anchors, forgePrice, starsFromText, DEFAULT_CFG, wkey, quality, optionValue, price, matchText, unitPrice, forgeCost };
   root.CALC = api;
   if (typeof module !== "undefined") module.exports = api;
 })(typeof window !== "undefined" ? window : globalThis);

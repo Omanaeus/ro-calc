@@ -71,8 +71,8 @@
 .share textarea{width:100%;min-height:70px;font-size:13px;font-family:ui-monospace,monospace;margin-top:8px}
 .owner .slot .w{display:flex}
 .forge{margin-top:18px;padding-top:16px;border-top:1px solid #5a3d1a}
-.forge[hidden]{display:none}
-.frow{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) minmax(0,1fr);gap:10px;margin-bottom:10px}
+.forge[hidden],[hidden]{display:none!important}
+.frow{display:grid;grid-template-columns:minmax(0,1.6fr) repeat(3,minmax(0,1fr));gap:10px;margin-bottom:10px}
 .frow label{display:grid;gap:4px;font-size:13px;color:var(--soft)}
 .frow select,.frow input{width:100%}
 .mats input{width:8.5em;min-height:36px;padding:6px 10px;text-align:right}
@@ -86,6 +86,18 @@
 .fsum b{color:var(--gold-ink);font-family:Kanit,sans-serif;font-weight:500;white-space:nowrap}
 .fsum .warn{color:var(--bad);font-size:13px}
 .bd tr.cost td{color:#e6dcc4;border-bottom:1px solid #4a3826}
+.thb{font-size:17px;color:var(--ink);margin:0 0 4px;font-family:Kanit,sans-serif}
+.thb small{color:var(--soft);font-family:Sarabun,sans-serif;font-size:13px}
+.pw{background:rgb(0 0 0/.28);border:1px solid #4a3826;border-radius:8px;padding:10px 12px;margin:10px 0 12px;font-size:14px;color:var(--soft);display:grid;gap:3px}
+.pw b{color:var(--gold-ink);font-weight:600;font-variant-numeric:tabular-nums}
+.pw code{color:var(--ink);font-size:13px;overflow-wrap:anywhere}
+.role{font-size:12px;color:var(--soft);white-space:nowrap}
+.subh{font-size:14px;color:var(--frame);margin:14px 0 4px;font-weight:500}
+.curve input{width:6.5em;min-height:34px;padding:4px 8px;text-align:right}
+.curve .x{background:none;border:0;color:var(--bad);font-size:18px;cursor:pointer;min-width:36px;min-height:34px}
+.wt .r em{font-style:normal;font-size:12px;color:var(--soft);display:block}
+.cfg label>span{display:block}
+@media(max-width:700px){.frow{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:480px){.frow{grid-template-columns:minmax(0,1fr)}.mats input{width:6.5em}}
 </style>
 </head>
@@ -125,6 +137,7 @@
           <div class="frow">
             <label>อาวุธ<select id="f-weapon"></select></label>
             <label>โอกาสตีสำเร็จ (%)<input id="f-rate" type="number" min="1" max="100" step="1" inputmode="numeric"></label>
+            <label>ตีบวก<select id="f-refine"><option value="0">+0</option><option value="1">+1</option><option value="2">+2</option><option value="3">+3</option><option value="4">+4</option><option value="5">+5</option><option value="6">+6</option><option value="7">+7</option><option value="8">+8</option><option value="9">+9</option><option value="10">+10</option></select></label>
             <label>ใส่ Star Crumb (ชิ้น)<select id="f-star"><option value="0">ไม่ใส่</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select></label>
           </div>
           <div class="scroll">
@@ -138,9 +151,11 @@
       <aside class="panel res" aria-live="polite">
         <h2>ราคาประเมิน <span class="mine">ใช้น้ำหนักของคุณ</span></h2>
         <div class="big" id="total">0 <small>z</small></div>
+        <div class="thb" id="thb"></div>
+        <div class="pw" id="pw" hidden></div>
         <p class="grade" id="grade">เลือกออปชันทางซ้ายเพื่อเริ่มคำนวณ</p>
         <div class="scroll">
-          <table class="bd"><thead><tr><th>ช่อง</th><th>ออปชัน</th><th class="n">คุณภาพ</th><th class="n">มูลค่า</th></tr></thead><tbody id="bd"></tbody></table>
+          <table class="bd"><thead id="bd-head"></thead><tbody id="bd"></tbody></table>
         </div>
         <div class="acts" style="justify-content:flex-start;margin-top:14px"><button class="btn small" id="copy-btn" type="button">ก๊อปผลคำนวณ</button></div>
         <p class="note" id="note">ราคานี้เป็นการประเมินเบื้องต้น ใช้เป็นจุดเริ่มต่อรองได้</p>
@@ -149,10 +164,29 @@
         <div class="ownerbox">
           <p class="note" style="margin:0 0 4px">ค่าที่ปรับจะเก็บในเบราว์เซอร์นี้เท่านั้น คนอื่นไม่เห็น</p>
           <h2 style="font-size:17px;margin:8px 0 0">ตั้งค่าของ <span id="cfg-type"></span></h2>
-          <div class="cfg">
+          <div class="cfg" id="cfg-armor">
             <label>ราคาฐาน (z)<input id="c-base" inputmode="decimal" placeholder="เช่น 500k"></label>
             <label>ความชัน k<input id="c-k" type="number" step="0.1" min="0.1" max="5"></label>
             <label>มูลค่าขั้นต่ำ<input id="c-floor" type="number" step="0.05" min="0" max="1"></label>
+          </div>
+          <div id="cfg-forge">
+            <div class="cfg">
+              <label><span>ความต้องการ <span id="d-name"></span></span><input id="c-demand" type="number" step="0.05" min="0" inputmode="decimal"></label>
+              <label>ช่อง 4 เผ่าตรง (c)<input id="c-s4m" type="number" step="0.01" min="0" inputmode="decimal"></label>
+              <label>ช่อง 4 เผ่าไม่ตรง (c)<input id="c-s4o" type="number" step="0.01" min="0" inputmode="decimal"></label>
+              <label>1m z = กี่บาท<input id="c-thb" type="number" step="0.5" min="0" inputmode="decimal"></label>
+              <label>ใบการันตี +7 (บาท)<input id="c-r7" data-r="7" type="number" min="0" inputmode="decimal"></label>
+              <label>ใบการันตี +8 (บาท)<input id="c-r8" data-r="8" type="number" min="0" inputmode="decimal"></label>
+              <label>ใบการันตี +9 (บาท)<input id="c-r9" data-r="9" type="number" min="0" inputmode="decimal"></label>
+              <label>ใบการันตี +10 (บาท)<input id="c-r10" data-r="10" type="number" min="0" inputmode="decimal"></label>
+            </div>
+            <h3 class="subh" id="curve-title">เส้นราคา</h3>
+            <p class="note" id="curve-note" style="margin:0 0 6px"></p>
+            <button class="btn ghost small" id="curve-own" type="button" style="margin-bottom:8px"></button>
+            <div class="scroll"><table class="bd curve"><thead><tr><th>ค่าพลัง</th><th class="n">ราคา (ล้าน z)</th><th class="n">≈ บาท</th><th></th></tr></thead><tbody id="curve"></tbody></table></div>
+            <button class="btn ghost small" id="curve-add" type="button" style="margin-top:8px">+ เพิ่มจุด</button>
+            <h3 class="subh" id="om-title">ค่าเทียบดาเมจ ω ของแต่ละออปชัน</h3>
+            <button class="btn ghost small" id="om-own" type="button" style="margin-bottom:6px"></button>
           </div>
           <div class="wt" id="wt"></div>
           <div class="acts" style="justify-content:flex-start;margin-top:12px">
@@ -175,14 +209,14 @@
 
 <section class="band formula">
   <div class="wrap">
-    <div><h2>คิดราคายังไง</h2><p>แต่ละออปชันมี "น้ำหนัก" คือราคาเมื่อ roll ได้ค่าสูงสุด ยิ่ง roll ได้ใกล้ค่าสูงสุด ยิ่งได้มูลค่าเต็มน้ำหนัก แล้วรวมทุกช่องกับราคาฐานของอุปกรณ์</p></div>
-    <div><h2>สูตร</h2>
-      <p><code>q = (ค่าที่ได้ − ต่ำสุด) ÷ (สูงสุด − ต่ำสุด)</code></p>
-      <p style="margin-top:6px"><code>มูลค่า = น้ำหนัก × (ขั้นต่ำ + (1 − ขั้นต่ำ) × q<sup>k</sup>)</code></p>
-      <p style="margin-top:6px"><code>ต้นทุนการตี = ค่าวัตถุดิบ ÷ โอกาสสำเร็จ</code></p>
-      <p style="margin-top:6px"><code>ราคา = ต้นทุนการตี (อาวุธ) + ราคาฐาน + ผลรวมมูลค่าทุกช่อง</code></p>
+    <div><h2>อาวุธตีเหล็ก: คิดจากค่าพลัง</h2>
+      <p><code>ดาเมจ = (1 + ธาตุ% + ขนาด% + เผ่า% + …) × (1 + ระยะไกล%)</code></p>
+      <p style="margin-top:6px"><code>ความเร็ว = 1 + 0.1 × ASPD (หรือ ASPD% × 0.015)</code></p>
+      <p style="margin-top:6px"><code>ค่าพลัง = ดาเมจ × ความเร็ว × ช่อง 4</code></p>
+      <p style="margin-top:6px">แล้วอ่านราคาจากเส้นราคาตลาด × ความต้องการของอาวุธ ไม่ต่ำกว่าต้นทุนการตี (ค่าวัตถุดิบ ÷ โอกาสสำเร็จ) จากนั้นบวกค่าใบการันตีตีบวกตรงๆ</p>
     </div>
-    <div><h2>ข้อมูลออปชัน</h2><p>ช่วงค่าออปชันและสูตรตีอาวุธจาก rozerodb.com ซึ่งแจ้งว่ายังตรวจสอบกับข้อมูลในเกมอยู่ อาจคลาดเคลื่อนได้บ้าง ราคาที่ได้เป็นค่าประมาณ ไม่ใช่ราคาตลาดจริง</p></div>
+    <div><h2>ค่าเทียบดาเมจ ω</h2><p>บอกว่าออปชัน 1 หน่วยมีค่าเท่าดาเมจกี่ % เช่น ไฟ ω 1 → ไฟ 40 = ดาเมจ +40%, CRI ω 2 → CRI 20 = +40% ออปชันที่ตลาดไม่ค่อยต้องการใส่ ω ต่ำ</p></div>
+    <div><h2>เกราะ / ข้อมูลออปชัน</h2><p>Armor, Garment, Shoes คิดจากน้ำหนักราคาของแต่ละออปชัน × คุณภาพ roll ช่วงค่าออปชันและสูตรตีจาก rozerodb.com ซึ่งยังตรวจกับข้อมูลในเกมอยู่ ราคาที่ได้เป็นค่าประมาณ</p></div>
   </div>
 </section>
 
@@ -211,6 +245,7 @@ function loadW() {
 }
 function saveW() {
   const diff = {}; Object.keys(W).forEach(k => { if (Number(W[k]) !== Number(DEF[k] ?? 0)) diff[k] = Number(W[k]) || 0; });
+  Object.keys(DEF).forEach(k => { if (!(k in W)) diff[k] = 0; }); // จุดบนเส้นราคาที่ถูกลบ
   store.set(LS, Object.keys(diff).length ? JSON.stringify(diff) : "");
   document.body.classList.toggle("custom", Object.keys(diff).length > 0);
 }
@@ -235,23 +270,57 @@ function renderSlots() {
       <label class="vh" for="v-${s}">ค่าของช่อง ${s + 1}</label>
       <input id="v-${s}" data-f="value" type="number" inputmode="decimal" ${opt ? `min="${opt[1]}" max="${opt[2]}" value="${esc(p.value)}" placeholder="${opt[1]}–${opt[2]}"` : "disabled placeholder=\"ค่า\""}>
       <div class="meter"><span class="bar"><i id="q-${s}"></i></span><span style="white-space:nowrap">${opt ? `ช่วง ${opt[1]}–${opt[2]}` : ""}</span></div>
-      <div class="w"><label for="w-${s}">น้ำหนัก (ราคาที่ค่าสูงสุด)</label><input id="w-${s}" data-f="w" inputmode="decimal" ${opt ? `value="${esc(W[CALC.wkey(cur.id, s, opt[0])] || "")}"` : "disabled"} placeholder="z"></div>
+      <div class="w"><label for="w-${s}">${cur.id === "forge" ? (s === 3 ? "ช่อง 4 ใช้ค่า c ด้านขวา" : "ค่าเทียบดาเมจ ω ต่อ 1 หน่วย") : "น้ำหนัก (ราคาที่ค่าสูงสุด)"}</label><input id="w-${s}" data-f="w" inputmode="decimal" ${opt && !(cur.id === "forge" && s === 3) ? `value="${esc(wval(s, opt[0]) ?? "")}"` : "disabled"} placeholder="${cur.id === "forge" ? "ω" : "z"}"></div>
     </div>`;
   }).join("");
   calc();
 }
+const ROLE = { add: "บวกในก้อนดาเมจ", mult: "ตัวคูณแยก", speed: "ความเร็ว", slot4: "ช่อง 4" };
+function effText(role, om, v) {
+  if (role === "speed") return "+" + (om * v).toFixed(2) + " ความเร็ว";
+  if (role === "mult") return "×" + (1 + om * v / 100).toFixed(2);
+  return "+" + Math.round(om * v) + "% ดาเมจ";
+}
 function renderOwner() {
-  const c = cfgOf(cur);
-  $("#c-base").value = c.base || ""; $("#c-k").value = c.k; $("#c-floor").value = c.floor;
-  $("#wt").innerHTML = cur.slots.map((pool, s) => `<h3>ช่อง ${s + 1}</h3>` + pool.map(o => {
-    const k = CALC.wkey(cur.id, s, o[0]);
-    return `<div class="r"><span>${esc(short(o[0]))} <small>${o[1]}–${o[2]}</small></span><input data-k="${esc(k)}" inputmode="decimal" value="${esc(W[k] || "")}" placeholder="0" aria-label="น้ำหนัก ${esc(o[0])}"></div>`;
+  const F = cur.id === "forge";
+  $("#cfg-armor").hidden = F; $("#cfg-forge").hidden = !F;
+  if (F) {
+    const dk = W["demand|" + weapon] !== undefined ? "demand|" + weapon : "demand|*";
+    $("#d-name").textContent = "(" + weapon + (dk === "demand|*" ? ", ใช้ค่ากลาง" : "") + ")";
+    $("#c-demand").value = W[dk] ?? 1; $("#c-s4m").value = W["forge|s4match"] ?? 0; $("#c-s4o").value = W["forge|s4other"] ?? 0; $("#c-thb").value = W["thb|perM"] ?? ""; [7, 8, 9, 10].forEach(n => $("#c-r" + n).value = W["refine|" + n] ?? "");
+    renderCurve();
+    $("#om-title").textContent = ownOmega() ? "ค่าเทียบดาเมจ ω เฉพาะ " + weapon : "ค่าเทียบดาเมจ ω กลาง (ใช้กับทุกอาวุธ)";
+    $("#om-own").textContent = ownOmega() ? "กลับไปใช้ ω กลาง" : "ตั้ง ω เฉพาะ " + weapon;
+  } else { const c = cfgOf(cur); $("#c-base").value = c.base || ""; $("#c-k").value = c.k; $("#c-floor").value = c.floor; }
+  $("#wt").innerHTML = cur.slots.map((pool, s) => (F && s === 3) ? "" : `<h3>ช่อง ${s + 1}</h3>` + pool.map(o => {
+    const k = keyFor(s, o[0]), v = wval(s, o[0]);
+    const extra = F ? `<em>${ROLE[CALC.roleOf(s, o[0])]} · สูงสุด ${effText(CALC.roleOf(s, o[0]), Number(v) || 0, o[2])}</em>` : "";
+    return `<div class="r"><span>${esc(short(o[0]))} <small>${o[1]}–${o[2]}</small>${extra}</span><input data-k="${esc(k)}" inputmode="decimal" value="${esc(v ?? "")}" placeholder="0" aria-label="${F ? "ค่า ω" : "น้ำหนัก"} ${esc(o[0])}"></div>`;
   }).join("")).join("");
+}
+const ownCurve = () => CALC.hasOwnCurve(W, weapon);
+const ownOmega = () => CALC.hasOwnOmega(W, weapon);
+const keyFor = (s, name) => cur.id === "forge" ? CALC.omegaKey(W, weapon, s, name) : CALC.wkey(cur.id, s, name);
+const wval = (s, name) => W[keyFor(s, name)] ?? W[CALC.wkey(cur.id, s, name)];
+const curveKey = () => ownCurve() ? weapon : "";
+function renderCurve() {
+  const rate = Number(W["thb|perM"]) || 0, own = ownCurve();
+  $("#curve-title").textContent = own ? "เส้นราคาเฉพาะ " + weapon : "เส้นราคากลาง (อ้างอิง Stunner)";
+  $("#curve-note").textContent = own ? "อาวุธนี้ใช้เส้นราคาของตัวเอง ไม่ใช้ตัวคูณความต้องการ" : "อาวุธที่ไม่มีเส้นของตัวเอง ใช้เส้นนี้ × ความต้องการ";
+  $("#curve-own").textContent = own ? "กลับไปใช้เส้นกลาง × ความต้องการ" : "สร้างเส้นราคาเฉพาะ " + weapon;
+  $("#c-demand").disabled = own;
+  $("#curve").innerHTML = CALC.anchors(W, curveKey()).map(([p, z]) => `<tr><td><input data-c="p" value="${p}" inputmode="decimal" aria-label="ค่าพลัง"></td><td class="n"><input data-c="z" value="${+(z / 1e6).toFixed(2)}" inputmode="decimal" aria-label="ราคา ล้าน z"></td><td class="n">${rate ? n0(z / 1e6 * rate) : "–"}</td><td><button class="x" type="button" data-c="del" aria-label="ลบจุดนี้">×</button></td></tr>`).join("");
+}
+function readCurve() {
+  const pre = CALC.curvePrefix(curveKey());
+  Object.keys(W).forEach(k => { if (k.startsWith(pre)) delete W[k]; });
+  [...$("#curve").rows].forEach(tr => { const p = Number(tr.querySelector('[data-c="p"]').value), z = Number(tr.querySelector('[data-c="z"]').value); if (p > 0 && z > 0) W[pre + p] = Math.round(z * 1e6); });
 }
 /* ---------- ต้นทุนการตี ---------- */
 const RECIPES = window.RECIPES || [], SUB = window.SUBRECIPES || {};
 let weapon = store.get("ro-calc-weapon") || "Two-Handed Axe";
 let stars = Math.max(0, Math.min(3, Number(store.get("ro-calc-star")) || 0));
+let refine = Math.max(0, Math.min(10, Number(store.get("ro-calc-refine")) || 0));
 const recipeOf = () => { const r = RECIPES.find(x => x[0] === weapon); if (!r) return null; return stars ? [r[0], r[1], [...r[2], ["Star Crumb", stars]]] : r; };
 const n0 = v => Math.round(v).toLocaleString("en-US");
 const subNames = () => [...new Set(Object.values(SUB).flat().map(x => x[0]))];
@@ -260,6 +329,7 @@ function renderForge() {
   $("#f-weapon").innerHTML = [1, 2, 3].map(lv => `<optgroup label="อาวุธ Lv ${lv}">` + RECIPES.filter(r => r[1] === lv).map(r => `<option value="${esc(r[0])}"${r[0] === weapon ? " selected" : ""}>${esc(r[0])}</option>`).join("") + `</optgroup>`).join("");
   $("#f-rate").value = Math.round((Number(W["forge|rate"]) || 0.4) * 100);
   $("#f-star").value = String(stars);
+  $("#f-refine").value = String(refine);
   const fc = CALC.forgeCost(recipeOf(), W, SUB);
   $("#f-mats").innerHTML = fc.lines.map(l => {
     const own = Number(W["mat|" + l.name]) || "";
@@ -284,11 +354,37 @@ function refreshForgeNumbers() {
   updateForgeSum(fc);
 }
 
+const thbOf = z => { const r = Number(W["thb|perM"]) || 0; return r ? z / 1e6 * r : 0; };
+function setTotal(z) {
+  $("#total").innerHTML = esc(n0(z)) + " <small>z</small>";
+  const b = thbOf(z); $("#thb").innerHTML = b ? `≈ ${esc(n0(b))} บาท <small>(1m = ${esc(W["thb|perM"])} บาท)</small>` : "";
+}
+function calcForge() {
+  const r = CALC.forgePrice(cur, picks.forge, W, recipeOf(), SUB, refine);
+  setTotal(r.total);
+  r.lines.forEach(l => { const q = $("#q-" + l.slot); if (q) q.style.width = l.q * 100 + "%"; });
+  [0, 1, 2, 3].forEach(s => { if (!r.lines.some(l => l.slot === s)) { const q = $("#q-" + s); if (q) q.style.width = "0%"; } });
+  $("#grade").textContent = (refine ? "+" + refine + " " : "") + weapon + (stars ? ` · Star Crumb ×${stars}` : "") + (r.own ? " · ใช้เส้นราคาเฉพาะอาวุธนี้" : ` · ความต้องการ ×${r.demand}`);
+  $("#pw").hidden = false;
+  $("#pw").innerHTML = `<div>ตัวคูณดาเมจ <code>(1 + ${r.add.toFixed(2)})${r.mult !== 1 ? " × " + r.mult.toFixed(2) : ""}</code> = <b>${r.dmg.toFixed(2)}</b></div>
+    <div>ความเร็ว <b>×${r.speed.toFixed(2)}</b> · ช่อง 4 <b>×${r.s4.toFixed(3)}</b></div>
+    <div>ค่าพลัง = ${r.dmg.toFixed(2)} × ${r.speed.toFixed(2)} × ${r.s4.toFixed(3)} = <b>${r.power.toFixed(3)}</b></div>`;
+  $("#bd-head").innerHTML = `<tr><th>ช่อง</th><th>ออปชัน</th><th class="n">ผล</th></tr>`;
+  const rows = r.lines.map(l => `<tr><td>${l.slot + 1}</td><td>${esc(short(l.name))} <span style="color:var(--soft)">+${esc(l.value)}</span><br><span class="role">${ROLE[l.role]}${l.role !== "slot4" ? " · ω " + l.omega : ""}</span></td><td class="n">${l.role === "slot4" ? "×" + (1 + l.eff).toFixed(3) : esc(effText(l.role, l.omega, l.value))}</td></tr>`).join("");
+  $("#bd").innerHTML = (rows || `<tr><td colspan="3" style="color:var(--soft)">ยังไม่มีออปชัน</td></tr>`) +
+    `<tr class="cost"><td>–</td><td>${r.own ? "ราคาตลาดจากเส้นราคาของ " + esc(weapon) : "ราคาตลาดจากเส้นราคากลาง × ความต้องการ"}</td><td class="n">${esc(n0(r.market))}</td></tr>` +
+    `<tr class="cost"><td>–</td><td>ต้นทุนการตีเฉลี่ย (ราคาขั้นต่ำ)</td><td class="n">${esc(n0(r.fc.expected))}</td></tr>` +
+    (refine ? `<tr class="cost"><td>–</td><td>ตีบวก +${refine} ${r.refineZ ? "(ใบการันตี " + esc(n0(W["refine|" + refine])) + " บาท)" : "(ยังไม่ได้ตั้งราคา)"}</td><td class="n">+${esc(n0(r.refineZ))}</td></tr>` : "");
+  $("#note").textContent = r.floored ? "ออปชันยังไม่ดีพอ ราคาจึงเท่ากับต้นทุนการตี" : r.fc.missing ? "ยังใส่ราคาวัตถุดิบไม่ครบ ต้นทุนการตีจึงต่ำกว่าจริง" : "ราคานี้เป็นการประเมินจากราคาตลาด ใช้เป็นจุดเริ่มต่อรองได้";
+  return { total: r.total, lines: r.lines, fc: r.fc, power: r.power, refine };
+}
 function calc() {
+  if (cur.id === "forge") return calcForge();
+  $("#pw").hidden = true;
+  $("#bd-head").innerHTML = `<tr><th>ช่อง</th><th>ออปชัน</th><th class="n">คุณภาพ</th><th class="n">มูลค่า</th></tr>`;
   const r = CALC.price(cur, picks[cur.id], W, cfgOf(cur));
-  const fc = cur.id === "forge" ? CALC.forgeCost(recipeOf(), W, SUB) : null;
-  const total = r.total + (fc ? fc.expected : 0);
-  $("#total").innerHTML = esc(n0(total)) + " <small>z</small>";
+  const fc = null, total = r.total;
+  setTotal(total);
   const used = r.lines.filter(Boolean);
   r.lines.forEach((l, s) => { const q = $("#q-" + s); if (q) q.style.width = (l ? l.q * 100 : 0) + "%"; });
   const avg = used.length ? used.reduce((a, l) => a + l.q, 0) / used.length : 0;
@@ -310,25 +406,56 @@ $("#slots").addEventListener("change", e => {
 $("#slots").addEventListener("input", e => {
   const row = e.target.closest(".slot"); if (!row) return; const s = +row.dataset.s, p = picks[cur.id][s];
   if (e.target.dataset.f === "value" && p) { p.value = e.target.value === "" ? "" : Number(e.target.value); calc(); }
-  if (e.target.dataset.f === "w" && p) { const v = parsePrice(e.target.value); W[CALC.wkey(cur.id, s, p.name)] = v >= 0 ? v : 0; saveW(); calc(); renderOwner(); }
+  if (e.target.dataset.f === "w" && p) { const v = parsePrice(e.target.value); W[keyFor(s, p.name)] = v >= 0 ? v : 0; saveW(); calc(); renderOwner(); }
 });
 $("#max-btn").addEventListener("click", () => { picks[cur.id].forEach((p, s) => { if (p) p.value = cur.slots[s].find(x => x[0] === p.name)[2]; }); renderSlots(); });
 $("#clear-btn").addEventListener("click", () => { picks[cur.id] = cur.slots.map(() => null); $("#preview").hidden = true; $("#drop-text").hidden = false; say($("#ocr-status"), ""); renderSlots(); });
 $("#copy-btn").addEventListener("click", async () => {
   const r = calc(), used = r.lines.filter(Boolean);
-  const txt = `${cur.label}${r.fc ? " · " + weapon : ""}\n` + used.map(l => `- ${l.name} +${l.value}`).join("\n") + (r.fc ? (stars ? `\n+ Star Crumb ×${stars}` : "") + `\nต้นทุนการตีเฉลี่ย: ${fmt(r.fc.expected, "z")}` : "") + `\nราคาประเมิน: ${fmt(r.total, "z")}`;
+  const txt = `${cur.label}${r.fc ? " · " + (r.refine ? "+" + r.refine + " " : "") + weapon : ""}\n` + used.map(l => `- ${l.name} +${l.value}`).join("\n") + (r.fc ? (stars ? `\n+ Star Crumb ×${stars}` : "") + `\nต้นทุนการตีเฉลี่ย: ${fmt(r.fc.expected, "z")}` : "") + (r.power ? `\nค่าพลัง: ${r.power.toFixed(3)}` : "") + `\nราคาประเมิน: ${fmt(r.total, "z")}` + (thbOf(r.total) ? ` (≈ ${n0(thbOf(r.total))} บาท)` : "");
   try { await navigator.clipboard.writeText(txt); $("#copy-btn").textContent = "ก๊อปแล้ว ✓"; } catch (_) { $("#copy-btn").textContent = "ก๊อปไม่ได้"; }
   setTimeout(() => $("#copy-btn").textContent = "ก๊อปผลคำนวณ", 1800);
 });
 
 /* forge cost */
 $("#forge").addEventListener("change", e => {
+  if (e.target.id === "f-refine") { refine = Number(e.target.value) || 0; store.set("ro-calc-refine", String(refine)); calc(); return; }
   if (e.target.id === "f-star") { stars = Number(e.target.value) || 0; store.set("ro-calc-star", String(stars)); renderForge(); calc(); return; }
-  if (e.target.id === "f-weapon") { weapon = e.target.value; store.set("ro-calc-weapon", weapon); renderForge(); calc(); } });
+  if (e.target.id === "f-weapon") { weapon = e.target.value; store.set("ro-calc-weapon", weapon); renderForge(); renderOwner(); renderSlots(); } });
 $("#forge").addEventListener("input", e => {
   if (e.target.id === "f-rate") { const v = Number(e.target.value); if (v >= 1 && v <= 100) { W["forge|rate"] = v / 100; saveW(); refreshForgeNumbers(); calc(); } return; }
   const m = e.target.dataset.m; if (!m) return;
   const v = parsePrice(e.target.value); W["mat|" + m] = v > 0 ? v : 0; saveW(); refreshForgeNumbers(); calc();
+});
+
+$("#cfg-forge").addEventListener("input", e => {
+  const id = e.target.id, v = Number(e.target.value);
+  if (id === "c-demand" && v >= 0) W["demand|" + weapon] = v;
+  else if (id === "c-s4m" && v >= 0) W["forge|s4match"] = v;
+  else if (id === "c-s4o" && v >= 0) W["forge|s4other"] = v;
+  else if (id === "c-thb" && v >= 0) W["thb|perM"] = v;
+  else if (e.target.dataset.r && v >= 0) W["refine|" + e.target.dataset.r] = v;
+  else if (e.target.dataset.c) { readCurve(); }
+  else return;
+  saveW(); calc();
+  if (id === "c-demand") $("#d-name").textContent = "(" + weapon + ")";
+});
+$("#cfg-forge").addEventListener("change", e => { if (e.target.dataset.c || e.target.id === "c-thb") renderCurve(); });
+$("#cfg-forge").addEventListener("click", e => {
+  if (e.target.dataset.c === "del") { e.target.closest("tr").remove(); readCurve(); saveW(); renderCurve(); calc(); }
+  if (e.target.id === "curve-add") { const A = CALC.anchors(W, curveKey()), last = A[A.length - 1] || [1, 1e6]; W[CALC.curvePrefix(curveKey()) + +(last[0] + 0.1).toFixed(2)] = Math.round(last[1] * 1.5); saveW(); renderCurve(); calc(); }
+  if (e.target.id === "om-own") {
+    const pre = "forge@" + weapon + "|";
+    if (ownOmega()) Object.keys(W).forEach(k => { if (k.startsWith(pre)) delete W[k]; });
+    else Object.keys(W).forEach(k => { if (/^forge\|\d\|/.test(k)) W[k.replace("forge|", pre)] = W[k]; });
+    saveW(); renderOwner(); renderSlots(); calc();
+  }
+  if (e.target.id === "curve-own") {
+    const pre = CALC.curvePrefix(weapon);
+    if (ownCurve()) Object.keys(W).forEach(k => { if (k.startsWith(pre)) delete W[k]; });
+    else { const d = Number(W["demand|" + weapon] ?? W["demand|*"] ?? 1); CALC.anchors(W, "").forEach(([p, z]) => W[pre + p] = Math.round(z * d)); }
+    saveW(); renderOwner(); calc();
+  }
 });
 
 /* custom weights */
@@ -336,7 +463,7 @@ $("#owner").addEventListener("change", e => { document.body.classList.toggle("ow
 [["#c-base", "base"], ["#c-k", "k"], ["#c-floor", "floor"]].forEach(([sel, f]) => $(sel).addEventListener("input", e => { const v = f === "base" ? parsePrice(e.target.value) : Number(e.target.value); if (v >= 0) { W[cur.id + "|" + f] = v; saveW(); calc(); } }));
 $("#wt").addEventListener("input", e => {
   const k = e.target.dataset.k; if (!k) return; const v = parsePrice(e.target.value); W[k] = v >= 0 ? v : 0; saveW(); calc();
-  picks[cur.id].forEach((x, s) => { if (x && CALC.wkey(cur.id, s, x.name) === k) { const wi = $("#w-" + s); if (wi) wi.value = W[k] || ""; } });
+  picks[cur.id].forEach((x, s) => { if (x && keyFor(s, x.name) === k) { const wi = $("#w-" + s); if (wi) wi.value = W[k] ?? ""; } });
 });
 let resetArm = false;
 $("#reset-w").addEventListener("click", () => {
@@ -390,7 +517,7 @@ async function handleFile(file) {
     let best = { t: cur, m: CALC.matchText(cur, data.text) };
     TYPES.forEach(t => { if (t === cur) return; const m = CALC.matchText(t, data.text); if (m.count > best.m.count) best = { t, m }; });
     if (!best.m.count) return say($("#ocr-status"), "อ่านออปชันไม่เจอ ลองครอปให้เห็นเฉพาะกล่องออปชัน หรือเลือกเองด้านล่าง", "bad");
-    if (best.t.id === "forge") { const low = data.text.toLowerCase(); const hit = RECIPES.map(r => r[0]).filter(n => low.includes(n.toLowerCase())).sort((a, b) => b.length - a.length)[0]; if (hit) { weapon = hit; store.set("ro-calc-weapon", weapon); } }
+    if (best.t.id === "forge") { const low = data.text.toLowerCase(); const hit = RECIPES.map(r => r[0]).filter(n => low.includes(n.toLowerCase())).sort((a, b) => b.length - a.length)[0]; if (hit) { weapon = hit; store.set("ro-calc-weapon", weapon); } stars = CALC.starsFromText(data.text); store.set("ro-calc-star", String(stars)); refine = Math.min(10, CALC.refineFromText(data.text)); store.set("ro-calc-refine", String(refine)); }
     cur = best.t; picks[cur.id] = best.m.picks; renderTypes(); renderSlots(); renderOwner();
     say($("#ocr-status"), `อ่านได้ ${best.m.count} ออปชัน (${cur.label}) ตรวจค่าให้ถูกอีกที`, "ok");
   } catch (e) { say($("#ocr-status"), e.message, "bad"); }
