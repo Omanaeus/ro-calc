@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Chonburi&family=Cinzel:wght@600;700&family=Kanit:wght@500;700&family=Sarabun:wght@400;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=20261126k">
+<link rel="stylesheet" href="style.css?v=20261126m">
 <style>
 .ctop{background:linear-gradient(#0b0a1d,#2a2050);border-bottom:3px solid var(--frame);padding-block:22px}
 .ctop .wrap{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between}
@@ -133,6 +133,7 @@
         <div class="acts" style="justify-content:flex-start;margin-top:10px">
           <button class="btn ghost small" id="max-btn" type="button">ใส่ค่าสูงสุดทุกช่อง</button>
           <button class="btn ghost small" id="clear-btn" type="button">ล้างทั้งหมด</button>
+          <button class="btn small" id="recalc-btn" type="button">คำนวณใหม่</button>
         </div>
 
         <div class="forge" id="forge">
@@ -227,11 +228,11 @@
 
 <footer>เครื่องมือนี้ทำโดยผู้เล่น ไม่ได้เกี่ยวข้องกับ Gravity หรือผู้ให้บริการเกม</footer>
 
-<script src="common.js?v=20261126k"></script>
-<script src="affixes.js?v=20261126k"></script>
-<script src="weights.js?v=20261126k"></script>
-<script src="recipes.js?v=20261126k"></script>
-<script src="calc-core.js?v=20261126k"></script>
+<script src="common.js?v=20261126m"></script>
+<script src="affixes.js?v=20261126m"></script>
+<script src="weights.js?v=20261126m"></script>
+<script src="recipes.js?v=20261126m"></script>
+<script src="calc-core.js?v=20261126m"></script>
 <script>
 {
 const { esc, fmt, parsePrice } = RO;
@@ -436,6 +437,25 @@ $("#slots").addEventListener("input", e => {
 });
 $("#max-btn").addEventListener("click", () => { picks[cur.id].forEach((p, s) => { if (p) p.value = cur.slots[s].find(x => x[0] === p.name)[2]; }); renderSlots(); });
 $("#clear-btn").addEventListener("click", () => { picks[cur.id] = cur.slots.map(() => null); $("#preview").hidden = true; $("#drop-text").hidden = false; say($("#ocr-status"), ""); renderSlots(); });
+// คำนวณใหม่: อ่านทุกช่องบนหน้าจอใหม่ทั้งหมด (ออปชัน ค่า ω ราคาวัตถุดิบ) แล้วคำนวณ
+$("#recalc-btn").addEventListener("click", () => {
+  let fixed = 0; const before = { ...W };
+  // ใช้เฉพาะช่องที่ค่าต่างจากที่ระบบจำไว้ (ช่องที่เพิ่งแก้) ช่องที่ไม่ได้แก้จะไม่ทับกัน
+  const take = (k, txt) => { if (txt === "") return; const n = parseNum(txt); if (n >= 0 && n !== Number(before[k])) W[k] = n; };
+  document.querySelectorAll("#wt [data-k]").forEach(i => take(i.dataset.k, i.value));
+  cur.slots.forEach((pool, s) => {
+    const sel = $("#o-" + s), val = $("#v-" + s), wi = $("#w-" + s);
+    const o = sel && pool.find(x => x[0] === sel.value);
+    if (!o) { picks[cur.id][s] = null; return; }
+    let v = val && val.value !== "" ? Number(val.value) : o[2];
+    if (!(v >= o[1] && v <= o[2])) { v = Math.max(o[1], Math.min(o[2], v || o[2])); fixed++; }
+    picks[cur.id][s] = { name: o[0], value: v };
+    if (wi && !wi.disabled) take(keyFor(s, o[0]), wi.value);
+  });
+  if (cur.id === "forge") document.querySelectorAll("#forge [data-m]").forEach(i => { const n = parsePrice(i.value); W["mat|" + i.dataset.m] = n > 0 ? n : 0; });
+  saveW(); renderSlots(); renderOwner(); if (cur.id === "forge") renderForge();
+  say($("#ocr-status"), fixed ? `คำนวณใหม่แล้ว (ปรับค่าที่เกินช่วง ${fixed} ช่อง)` : "คำนวณใหม่แล้ว ✓", fixed ? "bad" : "ok");
+});
 $("#copy-btn").addEventListener("click", async () => {
   const r = calc(), used = r.lines.filter(Boolean);
   const txt = `${cur.label}${r.fc ? " · " + (r.refine ? "+" + r.refine + " " : "") + weapon : ""}\n` + used.map(l => `- ${l.name} +${l.value}`).join("\n") + (r.fc ? (stars ? `\n+ Star Crumb ×${stars}` : "") + `\nต้นทุนการตีเฉลี่ย: ${fmt(r.fc.expected, "z")}` : "") + (r.power ? `\nค่าพลัง: ${r.power.toFixed(3)}` : "") + `\nราคาประเมิน: ${fmt(r.total, "z")}` + (thbOf(r.total) ? ` (≈ ${n0(thbOf(r.total))} บาท)` : "");
