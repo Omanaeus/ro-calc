@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Chonburi&family=Cinzel:wght@600;700&family=Kanit:wght@500;700&family=Sarabun:wght@400;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=20261127c">
+<link rel="stylesheet" href="style.css?v=20261127f">
 <style>
 .ctop{background:linear-gradient(#0b0a1d,#2a2050);border-bottom:3px solid var(--frame);padding-block:22px}
 .ctop .wrap{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between}
@@ -221,18 +221,18 @@
       <p style="margin-top:6px"><code>ราคา = ราคาตามความเร็ว × ตัวคูณจากดาเมจ × ความต้องการ × ช่อง 4</code></p>
       <p style="margin-top:6px">อาวุธที่มีเส้นราคาของตัวเองใช้ค่าพลัง (ดาเมจ × ความเร็ว) อ่านจากเส้นนั้นแทน ราคาไม่ต่ำกว่าต้นทุนการตี (ค่าวัตถุดิบ ÷ โอกาสสำเร็จ) จากนั้นบวกค่าใบการันตีตีบวกตรงๆ</p>
     </div>
-    <div><h2>ค่าเทียบดาเมจ ω</h2><p>Saber มีราคา GvG แยก (Neutral / กลาง / ระยะไกล / ATK ตั้งแต่ 2 ช่อง) บวกเพิ่มจากราคาตีมอน อาวุธบางตัวมีชุดออปชันที่เข้าคู่กัน (เช่น 2HA: ไฟ/ดิน + กลาง/ใหญ่ + กึ่งมนุษย์) ตรง 2 ช่องราคา ×2 ครบ 3 ช่อง ×4 ออปชันดาเมจตามขนาดคูณด้วยค่าดาเมจตามขนาดของประเภทอาวุธ (เช่น Dagger ตีขนาดใหญ่ได้ 50%) อาวุธที่ยังไม่มีราคาจริงให้เทียบ ใช้ความต้องการตามเลเวลอาวุธ (Lv 3 แพงสุด) × ความครอบคลุมขนาดเล็กน้อย บอกว่าออปชัน 1 หน่วยมีค่าเท่าดาเมจกี่ % เช่น ไฟ ω 1 → ไฟ 40 = ดาเมจ +40%, CRI ω 2 → CRI 20 = +40% ออปชันที่ตลาดไม่ค่อยต้องการใส่ ω ต่ำ</p></div>
+    <div><h2>ค่าเทียบดาเมจ ω</h2><p>Saber มีราคา GvG แยก (Neutral / กลาง / ระยะไกล / ATK ตั้งแต่ 2 ช่อง) บวกเพิ่มจากราคาตีมอน อาวุธบางตัวมีชุดออปชันที่เข้าคู่กัน (เช่น 2HA: ไฟ/ดิน + กลาง/ใหญ่ + กึ่งมนุษย์) ตรง 2 ช่องราคา ×2 ครบ 3 ช่อง ×4 ออปชันดาเมจตามขนาดที่อาวุธตีได้ไม่เต็ม (Weapon Size Penalty) ทำให้ราคาลดลง: ตีได้ 75% ราคา ×0.82, 50% ราคา ×0.64 อาวุธที่ยังไม่มีราคาจริงให้เทียบ ใช้ความต้องการตามเลเวลอาวุธ (Lv 3 แพงสุด) × ความครอบคลุมขนาดเล็กน้อย บอกว่าออปชัน 1 หน่วยมีค่าเท่าดาเมจกี่ % เช่น ไฟ ω 1 → ไฟ 40 = ดาเมจ +40%, CRI ω 2 → CRI 20 = +40% ออปชันที่ตลาดไม่ค่อยต้องการใส่ ω ต่ำ</p></div>
     <div><h2>เกราะ / ข้อมูลออปชัน</h2><p>Armor, Garment, Shoes คิดจากน้ำหนักราคาของแต่ละออปชัน × คุณภาพ roll ช่วงค่าออปชันและสูตรตีจาก rozerodb.com ซึ่งยังตรวจกับข้อมูลในเกมอยู่ ราคาที่ได้เป็นค่าประมาณ</p></div>
   </div>
 </section>
 
 <footer>เครื่องมือนี้ทำโดยผู้เล่น ไม่ได้เกี่ยวข้องกับ Gravity หรือผู้ให้บริการเกม</footer>
 
-<script src="common.js?v=20261127c"></script>
-<script src="affixes.js?v=20261127c"></script>
-<script src="weights.js?v=20261127c"></script>
-<script src="recipes.js?v=20261127c"></script>
-<script src="calc-core.js?v=20261127c"></script>
+<script src="common.js?v=20261127f"></script>
+<script src="affixes.js?v=20261127f"></script>
+<script src="weights.js?v=20261127f"></script>
+<script src="recipes.js?v=20261127f"></script>
+<script src="calc-core.js?v=20261127f"></script>
 <script>
 {
 const { esc, fmt, parsePrice } = RO;
@@ -304,7 +304,8 @@ function renderOwner() {
   $("#wt").innerHTML = cur.slots.map((pool, s) => `<h3>ช่อง ${s + 1}${F && s === 3 ? " (ตัวคูณของ c: 1 = ปกติ, 0 = ไม่มีราคา)" : ""}</h3>` + pool.map(o => {
     const k = keyFor(s, o[0]), v = wval(s, o[0]) ?? (F && s === 3 ? 1 : undefined);
     const szm = F && o[0].match(/(Small|Medium|Large) targets/), smod = szm ? CALC.sizeModOf(weapon).mod[["Small", "Medium", "Large"].indexOf(szm[1])] : 100;
-    const extra = F ? `<em>${ROLE[CALC.roleOf(s, o[0])]}${szm ? ` · × ${esc(CALC.sizeModOf(weapon).type || "อาวุธ")} ${smod}% = ω จริง ${+((Number(v) || 0) * smod / 100).toFixed(2)}` : ""} · สูงสุด ${effText(CALC.roleOf(s, o[0]), (Number(v) || 0) * smod / 100, o[2])}</em>` : "";
+    const kp = Number(W["size|pricePenalty"] ?? 0.72), pmul = 1 - kp * (1 - smod / 100);
+    const extra = F ? `<em>${ROLE[CALC.roleOf(s, o[0])]} · สูงสุด ${effText(CALC.roleOf(s, o[0]), Number(v) || 0, o[2])}${szm && smod < 100 ? ` · ${esc(CALC.sizeModOf(weapon).type || "อาวุธ")} ตีได้ ${smod}% → ราคา ×${pmul.toFixed(2)}` : ""}</em>` : "";
     return `<div class="r"><span>${esc(short(o[0]))} <small>${o[1]}–${o[2]}</small>${extra}</span><input data-k="${esc(k)}" inputmode="decimal" value="${esc(v ?? "")}" placeholder="0" aria-label="${F ? "ค่า ω" : "น้ำหนัก"} ${esc(o[0])}"></div>`;
   }).join("")).join("");
 }
@@ -397,6 +398,7 @@ function calcForge() {
   $("#bd-head").innerHTML = `<tr><th>ช่อง</th><th>ออปชัน</th><th class="n">ผล</th></tr>`;
   const rows = r.lines.map(l => `<tr><td>${l.slot + 1}</td><td>${esc(short(l.name))} <span style="color:var(--soft)">+${esc(l.value)}</span><br><span class="role">${ROLE[l.role]}${l.role !== "slot4" ? " · ω " + l.omega : ""}${l.useful ? " · ✓ ใช้งานได้" : ""}</span></td><td class="n">${l.role === "slot4" ? "×" + (1 + l.eff).toFixed(3) : l.role === "add" ? "+" + Math.round(l.eff * 100) + "% ดาเมจ" + (/(Small|Medium|Large) targets/.test(l.name) && Math.abs(l.eff - l.omega * l.value / 100) > 1e-9 ? `<br><span class="role">อาวุธนี้ตีขนาดนี้ได้ ${Math.round(l.eff / (l.omega * l.value / 100) * 100)}%</span>` : "") : esc(effText(l.role, l.omega, l.value))}</td></tr>`).join("");
   $("#bd").innerHTML = (rows || `<tr><td colspan="3" style="color:var(--soft)">ยังไม่มีออปชัน</td></tr>`) +
+    (r.sizePen < 1 ? `<tr class="cost"><td>–</td><td>Weapon Size Penalty (${esc(r.size.type)} ตีขนาดนี้ได้ไม่เต็ม)</td><td class="n">×${r.sizePen.toFixed(2)}</td></tr>` : "") +
     (r.combo && r.combo.mult > 1 ? `<tr class="cost"><td>–</td><td>ออปชันเข้าชุด ${r.combo.n}/3 ช่อง (${esc(r.combo.names.map(short).join(" + "))})</td><td class="n">×${r.combo.mult}</td></tr>` : "") +
     (r.own ? "" : `<tr class="cost"><td>–</td><td>ราคาตามความเร็ว ×${r.speed.toFixed(2)}</td><td class="n">${esc(n0(r.speedZ))}</td></tr><tr class="cost"><td>–</td><td>× ตัวคูณจากดาเมจ ${r.dmg.toFixed(2)} · × ความต้องการ ${r.demand}${r.s4 !== 1 ? " · × ช่อง 4" : ""}</td><td class="n">×${(r.dmgX * r.demand * r.s4).toFixed(2)}</td></tr>`) +
     (r.gvg && r.gvg.z ? `<tr class="cost"><td>–</td><td>ราคาตีมอน</td><td class="n">${esc(n0(r.pvm))}</td></tr><tr class="cost"><td>–</td><td>+ โบนัส GvG (${esc(r.gvg.names.map(short).join(" + "))})</td><td class="n">+${esc(n0(r.gvg.z))}</td></tr>` : "") +

@@ -103,7 +103,7 @@
       if (role === "add") {
         eff = om * v / 100;
         const sz = opt[0].match(/(Small|Medium|Large) targets/);
-        if (sz) eff *= sizeModOf(weapon).mod[SIZES.indexOf(sz[1])] / 100; // Dagger ตีขนาดใหญ่ได้ 50% → ออปชันขนาดใหญ่ได้ผลครึ่งเดียว
+        // ผลของ Weapon Size Penalty คิดที่ราคา (sizePen ใน forgePrice) ดาเมจนับค่าเต็ม
         add += eff;
       }
       else if (role === "mult") { eff = om * v / 100; mult *= 1 + eff; }
@@ -194,12 +194,15 @@
     const d = isFinite(demand) ? demand : 1;
     const sz = own ? 0 : speedPrice(pw.speed, W, name), gx = own ? 0 : dmgMult(pw.dmg, W, name);
     const combo = comboOf(pw.lines, W, name);
-    const pvm = Math.round((own ? curvePrice(pw.power, W, name) : sz * gx * d) * pw.s4 * combo.mult);
+    // ออปชันขนาดที่อาวุธตีได้ไม่เต็ม 100% ลดราคาเพิ่ม: × (1 − k × (1 − penalty)) เช่น 75% → ×0.82
+    const k = Number(W["size|pricePenalty"] ?? 0.72), sm = sizeModOf(name).mod;
+    const sizePen = pw.lines.filter(l => /(Small|Medium|Large) targets/.test(l.name)).reduce((a, l) => a * Math.max(0, 1 - k * (1 - sm[SIZES.indexOf(l.name.match(/(Small|Medium|Large)/)[1])] / 100)), 1);
+    const pvm = Math.round((own ? curvePrice(pw.power, W, name) : sz * gx * d) * pw.s4 * combo.mult * sizePen);
     const gvg = gvgOf(pw.lines, W, name);
     const market = pvm + gvg.z;
     const fc = forgeCost(recipe, W, sub);
     const rz = refineZ(refine || 0, W);
-    return { ...pw, combo, gvg, pvm, own, ownTF, demand, demandAuto: !own && !ownTF && !explicit, sizeF: sf, lv, lvBase: base, size: sizeModOf(name), speedZ: sz, dmgX: gx, market, fc, refine: refine || 0, refineZ: rz, total: Math.max(market, fc.expected) + rz, floored: fc.expected > market };
+    return { ...pw, sizePen, combo, gvg, pvm, own, ownTF, demand, demandAuto: !own && !ownTF && !explicit, sizeF: sf, lv, lvBase: base, size: sizeModOf(name), speedZ: sz, dmgX: gx, market, fc, refine: refine || 0, refineZ: rz, total: Math.max(market, fc.expected) + rz, floored: fc.expected > market };
   }
 
   /* ---------- OCR matching ---------- */
