@@ -1,6 +1,7 @@
 // ค่าเริ่มต้นที่ทุกคนเห็น (แก้ได้จากหน้าเว็บ แล้วกด "บันทึกเป็น weights.js")
 // อาวุธตีเหล็ก: "forge|ช่อง|ออปชัน" = ค่าเทียบดาเมจ ω ต่อ 1 หน่วย ("forge@อาวุธ|…" = ω เฉพาะอาวุธนั้น), "speed|ความเร็ว" = ราคา (z) และ "dmgx|ตัวคูณดาเมจ" = เท่า (เส้นกลาง), "curve@อาวุธ|ค่าพลัง" = เส้นของอาวุธนั้น,
-//              "demand|อาวุธ" = ตัวคูณความต้องการ (Stunner = 1), "mat|วัตถุดิบ" = ราคาต่อชิ้น
+//              "demand|อาวุธ" = ตัวคูณความต้องการ (Stunner = 1), "demand|lvN" = ค่าเริ่มต้นตามเลเวลอาวุธ, "mat|วัตถุดิบ" = ราคาต่อชิ้น
+//              "size|ขนาด" = น้ำหนักของขนาดเป้าหมาย (ใช้คิดความครอบคลุมของอาวุธ)
 //              "refine|ระดับ" = ราคาใบการันตีตีบวก (บาท)
 // เกราะ: "ประเภท|ช่อง|ออปชัน" = ราคา (z) ตอน roll ได้ค่าสูงสุด, "ประเภท|base" = ราคาฐาน
 window.DEFAULT_WEIGHTS = {
@@ -289,9 +290,6 @@ window.DEFAULT_WEIGHTS = {
  "dmgx|1.4": 1.5,
  "dmgx|1.8": 16.67,
  "dmgx|2.1": 123,
- "curve@Damascus|1": 1000000,
- "curve@Damascus|1.78": 120900710,
- "curve@Damascus|2.3": 206555601,
  "curve@Gladius|1": 1000000,
  "curve@Gladius|1.649": 114582538,
  "curve@Gladius|2.3": 224040181,
@@ -339,5 +337,14 @@ window.DEFAULT_WEIGHTS = {
  "forge@Two-Handed Axe|4|Ignore Demon Phys Def (%)": 0,
  "forge@Two-Handed Axe|4|Ignore Demi-Human Phys Def (%)": 0,
  "forge@Two-Handed Axe|4|Ignore Angel Phys Def (%)": 0,
- "forge@Two-Handed Axe|4|Ignore Dragon Phys Def (%)": 0
+ "forge@Two-Handed Axe|4|Ignore Dragon Phys Def (%)": 0,
+ "curve@Damascus|1": 1000000,
+ "curve@Damascus|1.7": 120900710,
+ "curve@Damascus|2.3": 224296678,
+ "size|Small": 0.25,
+ "size|Medium": 0.5,
+ "size|Large": 0.25,
+ "demand|lv3": 0.3,
+ "demand|lv2": 0.08,
+ "demand|lv1": 0.03
 };

@@ -65,6 +65,19 @@
     if (/^Long-range/.test(name)) return "mult";
     return "add";
   }
+  // ดาเมจตามขนาดของประเภทอาวุธ (จาก recipes.js): [เล็ก, กลาง, ใหญ่] %
+  const SIZES = ["Small", "Medium", "Large"];
+  function sizeModOf(weapon) {
+    const T = root.WEAPON_TYPES || {}, M = root.SIZE_MOD || {}, t = T[weapon];
+    return t && M[t] ? { type: t, mod: M[t] } : { type: "", mod: [100, 100, 100] };
+  }
+  // ความครอบคลุมขนาด เทียบกับ Mace (อาวุธอ้างอิง Stunner): ยิ่งตีได้ 100% หลายขนาด ยิ่งสูง
+  function sizeFactor(weapon, W) {
+    const w = SIZES.map((z, i) => Number(W["size|" + z] ?? [0.25, 0.5, 0.25][i]));
+    const cov = m => m.reduce((a, v, i) => a + w[i] * v / 100, 0) / (w[0] + w[1] + w[2] || 1);
+    const ref = cov((root.SIZE_MOD || {}).Mace || [75, 100, 100]);
+    return ref ? cov(sizeModOf(weapon).mod) / ref : 1;
+  }
   const raceOf = n => (String(n).match(/(Formless|Undead|Brute|Plant|Insect|Fish|Demon|Demi-Human|Angel|Dragon)/) || [])[1] || "";
 
   /**
@@ -86,7 +99,12 @@
       const k = omegaKey(W, weapon, s, opt[0]);
       const w = Number(W[k] ?? W[wkey(type.id, s, opt[0])]); const om = isFinite(w) ? w : 0;
       let eff = 0;
-      if (role === "add") { eff = om * v / 100; add += eff; }
+      if (role === "add") {
+        eff = om * v / 100;
+        const sz = opt[0].match(/(Small|Medium|Large) targets/);
+        if (sz) eff *= sizeModOf(weapon).mod[SIZES.indexOf(sz[1])] / 100; // Dagger ตีขนาดใหญ่ได้ 50% → ออปชันขนาดใหญ่ได้ผลครึ่งเดียว
+        add += eff;
+      }
       else if (role === "mult") { eff = om * v / 100; mult *= 1 + eff; }
       else if (role === "speed") { eff = om * v; speed += eff; }
       else { const match = race3 && raceOf(opt[0]) === race3; const c = Number(W[match ? "forge|s4match" : "forge|s4other"]) || 0; eff = c * v / 100; s4 *= 1 + eff; }
@@ -139,13 +157,18 @@
   function forgePrice(type, picks, W, recipe, sub, refine) {
     const name = recipe ? recipe[0] : "", own = hasOwnCurve(W, name), ownTF = !own && hasOwnTF(W, name);
     const pw = forgePower(type, picks, W, name);
-    const demand = own || (ownTF && table(W, "speed@" + name + "|").length >= 2) ? 1 : name && W["demand|" + name] !== undefined ? Number(W["demand|" + name]) : Number(W["demand|*"] ?? 1);
+    const explicit = name && W["demand|" + name] !== undefined;
+    const sf = sizeFactor(name, W);
+    // อาวุธที่ยังไม่มีราคาจริง: ความต้องการตามเลเวลอาวุธ (Lv 3 แพงสุดเสมอ) × ความครอบคลุมขนาด (ปรับเล็กน้อยในเลเวลเดียวกัน)
+    const lv = recipe ? recipe[1] : 3, lvKey = "demand|lv" + lv;
+    const base = W[lvKey] !== undefined ? Number(W[lvKey]) : Number(W["demand|*"] ?? 1);
+    const demand = own || (ownTF && table(W, "speed@" + name + "|").length >= 2) ? 1 : explicit ? Number(W["demand|" + name]) : +(base * sf).toFixed(3);
     const d = isFinite(demand) ? demand : 1;
     const sz = own ? 0 : speedPrice(pw.speed, W, name), gx = own ? 0 : dmgMult(pw.dmg, W, name);
     const market = Math.round((own ? curvePrice(pw.power, W, name) : sz * gx * d) * pw.s4);
     const fc = forgeCost(recipe, W, sub);
     const rz = refineZ(refine || 0, W);
-    return { ...pw, own, ownTF, demand, speedZ: sz, dmgX: gx, market, fc, refine: refine || 0, refineZ: rz, total: Math.max(market, fc.expected) + rz, floored: fc.expected > market };
+    return { ...pw, own, ownTF, demand, demandAuto: !own && !ownTF && !explicit, sizeF: sf, lv, lvBase: base, size: sizeModOf(name), speedZ: sz, dmgX: gx, market, fc, refine: refine || 0, refineZ: rz, total: Math.max(market, fc.expected) + rz, floored: fc.expected > market };
   }
 
   /* ---------- OCR matching ---------- */
@@ -211,7 +234,7 @@
     return hit[0] || "";
   }
 
-  const api = { weaponFromText, hasOwnTF, tfPre, interpLog, table, speedPrice, dmgMult, refineZ, refineFromText, hasOwnOmega, omegaKey, curvePrefix, hasOwnCurve, roleOf, forgePower, curvePrice, anchors, forgePrice, starsFromText, DEFAULT_CFG, wkey, quality, optionValue, price, matchText, unitPrice, forgeCost };
+  const api = { sizeModOf, sizeFactor, weaponFromText, hasOwnTF, tfPre, interpLog, table, speedPrice, dmgMult, refineZ, refineFromText, hasOwnOmega, omegaKey, curvePrefix, hasOwnCurve, roleOf, forgePower, curvePrice, anchors, forgePrice, starsFromText, DEFAULT_CFG, wkey, quality, optionValue, price, matchText, unitPrice, forgeCost };
   root.CALC = api;
   if (typeof module !== "undefined") module.exports = api;
 })(typeof window !== "undefined" ? window : globalThis);

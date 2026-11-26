@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Chonburi&family=Cinzel:wght@600;700&family=Kanit:wght@500;700&family=Sarabun:wght@400;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=20261126c">
+<link rel="stylesheet" href="style.css?v=20261126f">
 <style>
 .ctop{background:linear-gradient(#0b0a1d,#2a2050);border-bottom:3px solid var(--frame);padding-block:22px}
 .ctop .wrap{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between}
@@ -82,6 +82,9 @@
 .subm summary{cursor:pointer;min-height:32px}
 .subm .r{display:grid;grid-template-columns:minmax(0,1fr) 9em;gap:8px;align-items:center;margin-top:6px}
 .subm input{min-height:36px;padding:6px 10px;width:100%;text-align:right}
+.wtype{margin:0 0 8px;font-size:14px;color:var(--soft)}
+.wtype b{color:var(--ink);font-weight:600}
+.wtype .lo{color:var(--bad)}
 .fsum{margin-top:12px;background:rgb(0 0 0/.25);border:1px solid #4a3826;border-radius:8px;padding:12px 14px;font-size:15px;display:grid;gap:4px}
 .fsum b{color:var(--gold-ink);font-family:Kanit,sans-serif;font-weight:500;white-space:nowrap}
 .fsum .warn{color:var(--bad);font-size:13px}
@@ -140,6 +143,7 @@
             <label>ตีบวก<select id="f-refine"><option value="0">+0</option><option value="1">+1</option><option value="2">+2</option><option value="3">+3</option><option value="4">+4</option><option value="5">+5</option><option value="6">+6</option><option value="7">+7</option><option value="8">+8</option><option value="9">+9</option><option value="10">+10</option></select></label>
             <label>ใส่ Star Crumb (ชิ้น)<select id="f-star"><option value="0">ไม่ใส่</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select></label>
           </div>
+          <p class="wtype" id="f-type"></p>
           <div class="scroll">
             <table class="bd mats"><thead><tr><th>วัตถุดิบ</th><th class="n">จำนวน</th><th class="n">ราคา/ชิ้น (z)</th><th class="n">รวม</th></tr></thead><tbody id="f-mats"></tbody></table>
           </div>
@@ -174,6 +178,8 @@
               <label><span>ความต้องการ <span id="d-name"></span></span><input id="c-demand" type="number" step="0.05" min="0" inputmode="decimal"></label>
               <label>ช่อง 4 เผ่าตรง (c)<input id="c-s4m" type="number" step="0.01" min="0" inputmode="decimal"></label>
               <label>ช่อง 4 เผ่าไม่ตรง (c)<input id="c-s4o" type="number" step="0.01" min="0" inputmode="decimal"></label>
+              <label>น้ำหนักขนาด เล็ก/กลาง/ใหญ่<span style="display:flex;gap:4px"><input id="c-sz0" data-sz="Small" type="number" step="0.05" min="0" style="width:33%;padding:8px 6px"><input id="c-sz1" data-sz="Medium" type="number" step="0.05" min="0" style="width:33%;padding:8px 6px"><input id="c-sz2" data-sz="Large" type="number" step="0.05" min="0" style="width:33%;padding:8px 6px"></span></label>
+              <label>ความต้องการเริ่มต้น Lv 1/2/3<span style="display:flex;gap:4px"><input id="c-lv1" data-lv="1" type="number" step="0.01" min="0" style="width:33%;padding:8px 6px"><input id="c-lv2" data-lv="2" type="number" step="0.01" min="0" style="width:33%;padding:8px 6px"><input id="c-lv3" data-lv="3" type="number" step="0.01" min="0" style="width:33%;padding:8px 6px"></span></label>
               <label>1m z = กี่บาท<input id="c-thb" type="number" step="0.5" min="0" inputmode="decimal"></label>
               <label>ใบการันตี +7 (บาท)<input id="c-r7" data-r="7" type="number" min="0" inputmode="decimal"></label>
               <label>ใบการันตี +8 (บาท)<input id="c-r8" data-r="8" type="number" min="0" inputmode="decimal"></label>
@@ -214,18 +220,18 @@
       <p style="margin-top:6px"><code>ราคา = ราคาตามความเร็ว × ตัวคูณจากดาเมจ × ความต้องการ × ช่อง 4</code></p>
       <p style="margin-top:6px">อาวุธที่มีเส้นราคาของตัวเองใช้ค่าพลัง (ดาเมจ × ความเร็ว) อ่านจากเส้นนั้นแทน ราคาไม่ต่ำกว่าต้นทุนการตี (ค่าวัตถุดิบ ÷ โอกาสสำเร็จ) จากนั้นบวกค่าใบการันตีตีบวกตรงๆ</p>
     </div>
-    <div><h2>ค่าเทียบดาเมจ ω</h2><p>บอกว่าออปชัน 1 หน่วยมีค่าเท่าดาเมจกี่ % เช่น ไฟ ω 1 → ไฟ 40 = ดาเมจ +40%, CRI ω 2 → CRI 20 = +40% ออปชันที่ตลาดไม่ค่อยต้องการใส่ ω ต่ำ</p></div>
+    <div><h2>ค่าเทียบดาเมจ ω</h2><p>ออปชันดาเมจตามขนาดคูณด้วยค่าดาเมจตามขนาดของประเภทอาวุธ (เช่น Dagger ตีขนาดใหญ่ได้ 50%) อาวุธที่ยังไม่มีราคาจริงให้เทียบ ใช้ความต้องการตามเลเวลอาวุธ (Lv 3 แพงสุด) × ความครอบคลุมขนาดเล็กน้อย บอกว่าออปชัน 1 หน่วยมีค่าเท่าดาเมจกี่ % เช่น ไฟ ω 1 → ไฟ 40 = ดาเมจ +40%, CRI ω 2 → CRI 20 = +40% ออปชันที่ตลาดไม่ค่อยต้องการใส่ ω ต่ำ</p></div>
     <div><h2>เกราะ / ข้อมูลออปชัน</h2><p>Armor, Garment, Shoes คิดจากน้ำหนักราคาของแต่ละออปชัน × คุณภาพ roll ช่วงค่าออปชันและสูตรตีจาก rozerodb.com ซึ่งยังตรวจกับข้อมูลในเกมอยู่ ราคาที่ได้เป็นค่าประมาณ</p></div>
   </div>
 </section>
 
 <footer>เครื่องมือนี้ทำโดยผู้เล่น ไม่ได้เกี่ยวข้องกับ Gravity หรือผู้ให้บริการเกม</footer>
 
-<script src="common.js?v=20261126c"></script>
-<script src="affixes.js?v=20261126c"></script>
-<script src="weights.js?v=20261126c"></script>
-<script src="recipes.js?v=20261126c"></script>
-<script src="calc-core.js?v=20261126c"></script>
+<script src="common.js?v=20261126f"></script>
+<script src="affixes.js?v=20261126f"></script>
+<script src="weights.js?v=20261126f"></script>
+<script src="recipes.js?v=20261126f"></script>
+<script src="calc-core.js?v=20261126f"></script>
 <script>
 {
 const { esc, fmt, parsePrice } = RO;
@@ -286,7 +292,7 @@ function renderOwner() {
   if (F) {
     const dk = W["demand|" + weapon] !== undefined ? "demand|" + weapon : "demand|*";
     $("#d-name").textContent = "(" + weapon + (dk === "demand|*" ? ", ใช้ค่ากลาง" : "") + ")";
-    $("#c-demand").value = W[dk] ?? 1; $("#c-s4m").value = W["forge|s4match"] ?? 0; $("#c-s4o").value = W["forge|s4other"] ?? 0; $("#c-thb").value = W["thb|perM"] ?? ""; [7, 8, 9, 10].forEach(n => $("#c-r" + n).value = W["refine|" + n] ?? "");
+    $("#c-demand").value = W[dk] ?? 1; $("#c-s4m").value = W["forge|s4match"] ?? 0; $("#c-s4o").value = W["forge|s4other"] ?? 0; $("#c-thb").value = W["thb|perM"] ?? ""; [7, 8, 9, 10].forEach(n => $("#c-r" + n).value = W["refine|" + n] ?? ""); [1, 2, 3].forEach(n => $("#c-lv" + n).value = W["demand|lv" + n] ?? ""); ["Small", "Medium", "Large"].forEach((z, i) => $("#c-sz" + i).value = W["size|" + z] ?? [0.25, 0.5, 0.25][i]);
     renderCurve();
     $("#om-title").textContent = ownOmega() ? "ค่าเทียบดาเมจ ω เฉพาะ " + weapon : "ค่าเทียบดาเมจ ω กลาง (ใช้กับทุกอาวุธ)";
     $("#om-own").textContent = ownOmega() ? "กลับไปใช้ ω กลาง" : "ตั้ง ω เฉพาะ " + weapon;
@@ -338,6 +344,8 @@ function renderForge() {
   $("#f-rate").value = Math.round((Number(W["forge|rate"]) || 0.4) * 100);
   $("#f-star").value = String(stars);
   $("#f-refine").value = String(refine);
+  const sm = CALC.sizeModOf(weapon), lab = ["เล็ก", "กลาง", "ใหญ่"];
+  $("#f-type").innerHTML = sm.type ? `ประเภท <b>${esc(sm.type)}</b> · ดาเมจตามขนาด ` + sm.mod.map((v, i) => `${lab[i]} <b class="${v < 100 ? "lo" : ""}">${v}%</b>`).join(" / ") : "";
   const fc = CALC.forgeCost(recipeOf(), W, SUB);
   $("#f-mats").innerHTML = fc.lines.map(l => {
     const own = Number(W["mat|" + l.name]) || "";
@@ -372,13 +380,13 @@ function calcForge() {
   setTotal(r.total);
   r.lines.forEach(l => { const q = $("#q-" + l.slot); if (q) q.style.width = l.q * 100 + "%"; });
   [0, 1, 2, 3].forEach(s => { if (!r.lines.some(l => l.slot === s)) { const q = $("#q-" + s); if (q) q.style.width = "0%"; } });
-  $("#grade").textContent = (refine ? "+" + refine + " " : "") + weapon + (stars ? ` · Star Crumb ×${stars}` : "") + (r.own || r.ownTF ? " · ใช้ราคาเฉพาะอาวุธนี้" : ` · ความต้องการ ×${r.demand}`);
+  $("#grade").textContent = (refine ? "+" + refine + " " : "") + weapon + (stars ? ` · Star Crumb ×${stars}` : "") + (r.own || r.ownTF ? " · ใช้ราคาเฉพาะอาวุธนี้" : ` · ความต้องการ ×${r.demand}` + (r.demandAuto ? ` (Lv ${r.lv}: ${r.lvBase} × ขนาด ${r.sizeF.toFixed(2)})` : ""));
   $("#pw").hidden = false;
   $("#pw").innerHTML = `<div>ตัวคูณดาเมจ <code>(1 + ${r.add.toFixed(2)})${r.mult !== 1 ? " × " + r.mult.toFixed(2) : ""}</code> = <b>${r.dmg.toFixed(2)}</b></div>
     <div>ความเร็ว <b>×${r.speed.toFixed(2)}</b> · ช่อง 4 <b>×${r.s4.toFixed(3)}</b></div>
     ${r.own ? `<div>ค่าพลัง = ${r.dmg.toFixed(2)} × ${r.speed.toFixed(2)} = <b>${r.power.toFixed(3)}</b></div>` : `<div>ราคา = ${esc(n0(r.speedZ / 1e6))}m (ความเร็ว) × <b>${r.dmgX.toFixed(2)}</b> (ดาเมจ) × ${r.demand}${r.s4 !== 1 ? " × " + r.s4.toFixed(3) : ""}</div>`}`;
   $("#bd-head").innerHTML = `<tr><th>ช่อง</th><th>ออปชัน</th><th class="n">ผล</th></tr>`;
-  const rows = r.lines.map(l => `<tr><td>${l.slot + 1}</td><td>${esc(short(l.name))} <span style="color:var(--soft)">+${esc(l.value)}</span><br><span class="role">${ROLE[l.role]}${l.role !== "slot4" ? " · ω " + l.omega : ""}</span></td><td class="n">${l.role === "slot4" ? "×" + (1 + l.eff).toFixed(3) : esc(effText(l.role, l.omega, l.value))}</td></tr>`).join("");
+  const rows = r.lines.map(l => `<tr><td>${l.slot + 1}</td><td>${esc(short(l.name))} <span style="color:var(--soft)">+${esc(l.value)}</span><br><span class="role">${ROLE[l.role]}${l.role !== "slot4" ? " · ω " + l.omega : ""}</span></td><td class="n">${l.role === "slot4" ? "×" + (1 + l.eff).toFixed(3) : l.role === "add" ? "+" + Math.round(l.eff * 100) + "% ดาเมจ" + (/(Small|Medium|Large) targets/.test(l.name) && Math.abs(l.eff - l.omega * l.value / 100) > 1e-9 ? `<br><span class="role">อาวุธนี้ตีขนาดนี้ได้ ${Math.round(l.eff / (l.omega * l.value / 100) * 100)}%</span>` : "") : esc(effText(l.role, l.omega, l.value))}</td></tr>`).join("");
   $("#bd").innerHTML = (rows || `<tr><td colspan="3" style="color:var(--soft)">ยังไม่มีออปชัน</td></tr>`) +
     (r.own ? "" : `<tr class="cost"><td>–</td><td>ราคาตามความเร็ว ×${r.speed.toFixed(2)}</td><td class="n">${esc(n0(r.speedZ))}</td></tr><tr class="cost"><td>–</td><td>× ตัวคูณจากดาเมจ ${r.dmg.toFixed(2)} · × ความต้องการ ${r.demand}${r.s4 !== 1 ? " · × ช่อง 4" : ""}</td><td class="n">×${(r.dmgX * r.demand * r.s4).toFixed(2)}</td></tr>`) +
     `<tr class="cost"><td>–</td><td>${r.own ? "ราคาตลาดจากเส้นราคาของ " + esc(weapon) + (r.s4 !== 1 ? " × ช่อง 4" : "") : "= ราคาตลาด"}</td><td class="n">${esc(n0(r.market))}</td></tr>` +
@@ -444,6 +452,8 @@ $("#cfg-forge").addEventListener("input", e => {
   else if (id === "c-s4o" && v >= 0) W["forge|s4other"] = v;
   else if (id === "c-thb" && v >= 0) W["thb|perM"] = v;
   else if (e.target.dataset.r && v >= 0) W["refine|" + e.target.dataset.r] = v;
+  else if (e.target.dataset.sz && v >= 0) W["size|" + e.target.dataset.sz] = v;
+  else if (e.target.dataset.lv && v >= 0) W["demand|lv" + e.target.dataset.lv] = v;
   else if (e.target.dataset.c) { readCurve(Number(e.target.closest("[data-tb]").dataset.tb)); }
   else return;
   saveW(); calc();
