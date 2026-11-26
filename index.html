@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Chonburi&family=Cinzel:wght@600;700&family=Kanit:wght@500;700&family=Sarabun:wght@400;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=20261126u">
+<link rel="stylesheet" href="style.css?v=20261127c">
 <style>
 .ctop{background:linear-gradient(#0b0a1d,#2a2050);border-bottom:3px solid var(--frame);padding-block:22px}
 .ctop .wrap{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between}
@@ -221,18 +221,18 @@
       <p style="margin-top:6px"><code>ราคา = ราคาตามความเร็ว × ตัวคูณจากดาเมจ × ความต้องการ × ช่อง 4</code></p>
       <p style="margin-top:6px">อาวุธที่มีเส้นราคาของตัวเองใช้ค่าพลัง (ดาเมจ × ความเร็ว) อ่านจากเส้นนั้นแทน ราคาไม่ต่ำกว่าต้นทุนการตี (ค่าวัตถุดิบ ÷ โอกาสสำเร็จ) จากนั้นบวกค่าใบการันตีตีบวกตรงๆ</p>
     </div>
-    <div><h2>ค่าเทียบดาเมจ ω</h2><p>อาวุธบางตัวมีชุดออปชันที่เข้าคู่กัน (เช่น 2HA: ไฟ/ดิน + กลาง/ใหญ่ + กึ่งมนุษย์) ตรง 2 ช่องราคา ×2 ครบ 3 ช่อง ×4 ออปชันดาเมจตามขนาดคูณด้วยค่าดาเมจตามขนาดของประเภทอาวุธ (เช่น Dagger ตีขนาดใหญ่ได้ 50%) อาวุธที่ยังไม่มีราคาจริงให้เทียบ ใช้ความต้องการตามเลเวลอาวุธ (Lv 3 แพงสุด) × ความครอบคลุมขนาดเล็กน้อย บอกว่าออปชัน 1 หน่วยมีค่าเท่าดาเมจกี่ % เช่น ไฟ ω 1 → ไฟ 40 = ดาเมจ +40%, CRI ω 2 → CRI 20 = +40% ออปชันที่ตลาดไม่ค่อยต้องการใส่ ω ต่ำ</p></div>
+    <div><h2>ค่าเทียบดาเมจ ω</h2><p>Saber มีราคา GvG แยก (Neutral / กลาง / ระยะไกล / ATK ตั้งแต่ 2 ช่อง) บวกเพิ่มจากราคาตีมอน อาวุธบางตัวมีชุดออปชันที่เข้าคู่กัน (เช่น 2HA: ไฟ/ดิน + กลาง/ใหญ่ + กึ่งมนุษย์) ตรง 2 ช่องราคา ×2 ครบ 3 ช่อง ×4 ออปชันดาเมจตามขนาดคูณด้วยค่าดาเมจตามขนาดของประเภทอาวุธ (เช่น Dagger ตีขนาดใหญ่ได้ 50%) อาวุธที่ยังไม่มีราคาจริงให้เทียบ ใช้ความต้องการตามเลเวลอาวุธ (Lv 3 แพงสุด) × ความครอบคลุมขนาดเล็กน้อย บอกว่าออปชัน 1 หน่วยมีค่าเท่าดาเมจกี่ % เช่น ไฟ ω 1 → ไฟ 40 = ดาเมจ +40%, CRI ω 2 → CRI 20 = +40% ออปชันที่ตลาดไม่ค่อยต้องการใส่ ω ต่ำ</p></div>
     <div><h2>เกราะ / ข้อมูลออปชัน</h2><p>Armor, Garment, Shoes คิดจากน้ำหนักราคาของแต่ละออปชัน × คุณภาพ roll ช่วงค่าออปชันและสูตรตีจาก rozerodb.com ซึ่งยังตรวจกับข้อมูลในเกมอยู่ ราคาที่ได้เป็นค่าประมาณ</p></div>
   </div>
 </section>
 
 <footer>เครื่องมือนี้ทำโดยผู้เล่น ไม่ได้เกี่ยวข้องกับ Gravity หรือผู้ให้บริการเกม</footer>
 
-<script src="common.js?v=20261126u"></script>
-<script src="affixes.js?v=20261126u"></script>
-<script src="weights.js?v=20261126u"></script>
-<script src="recipes.js?v=20261126u"></script>
-<script src="calc-core.js?v=20261126u"></script>
+<script src="common.js?v=20261127c"></script>
+<script src="affixes.js?v=20261127c"></script>
+<script src="weights.js?v=20261127c"></script>
+<script src="recipes.js?v=20261127c"></script>
+<script src="calc-core.js?v=20261127c"></script>
 <script>
 {
 const { esc, fmt, parsePrice } = RO;
@@ -388,8 +388,10 @@ function calcForge() {
   $("#grade").textContent = (refine ? "+" + refine + " " : "") + weapon + (stars ? ` · Star Crumb ×${stars}` : "") + (r.own || r.ownTF ? " · ใช้ราคาเฉพาะอาวุธนี้" : ` · ความต้องการ ×${r.demand}` + (r.demandAuto ? ` (Lv ${r.lv}: ${r.lvBase} × ขนาด ${r.sizeF.toFixed(2)})` : ""));
   $("#pw").hidden = false;
   const TIER = ["ไม่มีออปชันที่ใช้งานได้", "ออปชันใช้งานได้ 1 ตัว: ขายออกยาก", "ออปชันใช้งานได้ 2 ตัว", "ออปชันใช้งานได้ครบ 3 ตัว"];
-  const cb = r.combo && r.combo.mult > 1 ? `<div>ออปชันเข้าชุด ${r.combo.n}/3 ช่อง <b>× ${r.combo.mult}</b></div>` : "";
-  $("#pw").innerHTML = `<div><b>${TIER[Math.min(3, r.useful)]}</b></div>${cb}<div>ตัวคูณดาเมจ <code>(1 + ${r.add.toFixed(2)})${r.mult !== 1 ? " × " + r.mult.toFixed(2) : ""}</code> = <b>${r.dmg.toFixed(2)}</b></div>
+  const cb = (r.combo && r.combo.mult > 1 ? `<div>ออปชันเข้าชุด ${r.combo.n}/3 ช่อง <b>× ${r.combo.mult}</b></div>` : "") +
+    (r.gvg && r.gvg.z ? `<div>โบนัส GvG ${r.gvg.n} ช่อง · ค่าพลัง GvG ${r.gvg.power.toFixed(2)} <b>+${esc(n0(r.gvg.z / 1e6))}m</b></div>` : "");
+  const uN = Math.max(r.useful, r.combo ? r.combo.n : 0, r.gvg && r.gvg.z ? r.gvg.n : 0);
+  $("#pw").innerHTML = `<div><b>${r.gvg && r.gvg.z ? "สาย GvG · " : ""}${TIER[Math.min(3, uN)]}</b></div>${cb}<div>ตัวคูณดาเมจ <code>(1 + ${r.add.toFixed(2)})${r.mult !== 1 ? " × " + r.mult.toFixed(2) : ""}</code> = <b>${r.dmg.toFixed(2)}</b></div>
     <div>ความเร็ว <b>×${r.speed.toFixed(2)}</b> · ช่อง 4 <b>×${r.s4.toFixed(3)}</b></div>
     ${r.own ? `<div>ค่าพลัง = ${r.dmg.toFixed(2)} × ${r.speed.toFixed(2)} = <b>${r.power.toFixed(3)}</b></div>` : `<div>ราคา = ${esc(n0(r.speedZ / 1e6))}m (ความเร็ว) × <b>${r.dmgX.toFixed(2)}</b> (ดาเมจ) × ${r.demand}${r.s4 !== 1 ? " × " + r.s4.toFixed(3) : ""}</div>`}`;
   $("#bd-head").innerHTML = `<tr><th>ช่อง</th><th>ออปชัน</th><th class="n">ผล</th></tr>`;
@@ -397,7 +399,8 @@ function calcForge() {
   $("#bd").innerHTML = (rows || `<tr><td colspan="3" style="color:var(--soft)">ยังไม่มีออปชัน</td></tr>`) +
     (r.combo && r.combo.mult > 1 ? `<tr class="cost"><td>–</td><td>ออปชันเข้าชุด ${r.combo.n}/3 ช่อง (${esc(r.combo.names.map(short).join(" + "))})</td><td class="n">×${r.combo.mult}</td></tr>` : "") +
     (r.own ? "" : `<tr class="cost"><td>–</td><td>ราคาตามความเร็ว ×${r.speed.toFixed(2)}</td><td class="n">${esc(n0(r.speedZ))}</td></tr><tr class="cost"><td>–</td><td>× ตัวคูณจากดาเมจ ${r.dmg.toFixed(2)} · × ความต้องการ ${r.demand}${r.s4 !== 1 ? " · × ช่อง 4" : ""}</td><td class="n">×${(r.dmgX * r.demand * r.s4).toFixed(2)}</td></tr>`) +
-    `<tr class="cost"><td>–</td><td>${r.own ? "ราคาตลาดจากเส้นราคาของ " + esc(weapon) + (r.s4 !== 1 ? " × ช่อง 4" : "") : "= ราคาตลาด"}</td><td class="n">${esc(n0(r.market))}</td></tr>` +
+    (r.gvg && r.gvg.z ? `<tr class="cost"><td>–</td><td>ราคาตีมอน</td><td class="n">${esc(n0(r.pvm))}</td></tr><tr class="cost"><td>–</td><td>+ โบนัส GvG (${esc(r.gvg.names.map(short).join(" + "))})</td><td class="n">+${esc(n0(r.gvg.z))}</td></tr>` : "") +
+    `<tr class="cost"><td>–</td><td>${r.gvg && r.gvg.z ? "= ราคาตลาด" : r.own ? "ราคาตลาดจากเส้นราคาของ " + esc(weapon) + (r.s4 !== 1 ? " × ช่อง 4" : "") : "= ราคาตลาด"}</td><td class="n">${esc(n0(r.market))}</td></tr>` +
     `<tr class="cost"><td>–</td><td>ต้นทุนการตีเฉลี่ย (ราคาขั้นต่ำ)</td><td class="n">${esc(n0(r.fc.expected))}</td></tr>` +
     (refine ? `<tr class="cost"><td>–</td><td>ตีบวก +${refine} ${r.refineZ ? "(ใบการันตี " + esc(n0(W["refine|" + refine])) + " บาท)" : "(ยังไม่ได้ตั้งราคา)"}</td><td class="n">+${esc(n0(r.refineZ))}</td></tr>` : "");
   $("#note").textContent = r.lines.some(l => l.over) ? "มีค่าออปชันเกินช่วง roll ระบบคิดที่ค่าสูงสุดของช่วงแทน" : r.floored ? "ออปชันยังไม่ดีพอ ราคาจึงเท่ากับต้นทุนการตี" : r.fc.missing ? "ยังใส่ราคาวัตถุดิบไม่ครบ ต้นทุนการตีจึงต่ำกว่าจริง" : "ราคานี้เป็นการประเมินจากราคาตลาด ใช้เป็นจุดเริ่มต่อรองได้";

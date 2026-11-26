@@ -155,7 +155,7 @@
 
   // ชุดออปชันที่เข้าคู่กัน (จาก weights.js: window.COMBOS) → ตัวคูณราคา
   function comboOf(lines, W, weapon) {
-    const sets = ((root.COMBOS || {})[weapon]) || [], min = Number(W["combo|min"] ?? 0.15);
+    const sets = ((root.COMBOS || {})[weapon]) || [], min = Number(W["combo@" + weapon + "|min"] ?? W["combo|min"] ?? 0.15);
     let best = { n: 0, mult: 1, names: [] };
     sets.forEach(set => {
       const hit = lines.filter(l => l.role !== "slot4" && (l.role === "speed" ? false : l.eff >= min - 1e-9) && set.some(k => new RegExp("\\b" + k + "\\b").test(l.name)));
@@ -164,6 +164,22 @@
       if (mult > best.mult) best = { n, mult, names: hit.map(l => l.name) };
     });
     return best;
+  }
+
+  /**
+   * ราคา GvG (จาก weights.js: window.GVG[อาวุธ] = {set:[...], lr}) คิดแยกจากราคาตีมอน แล้วบวกเพิ่ม
+   * นับเฉพาะเล่มที่มีออปชันในชุด GvG ≥ 2 ช่อง; ค่าพลัง GvG = (1 + Σ ผลออปชัน GvG) × (1 + lr × ระยะไกล%)
+   * แล้วอ่านราคาจากตาราง "gvg@อาวุธ|ค่าพลัง" = z
+   */
+  function gvgOf(lines, W, weapon) {
+    const G = (root.GVG || {})[weapon]; if (!G) return { n: 0, power: 1, z: 0 };
+    const min = Number(W["combo@" + weapon + "|min"] ?? W["combo|min"] ?? 0.15), lr = Number(W["gvg@" + weapon + "|lr"] ?? G.lr ?? 1);
+    const hit = lines.filter(l => l.role !== "slot4" && l.role !== "speed" && l.eff >= min - 1e-9 && G.set.some(k => new RegExp("\\b" + k + "\\b").test(l.name)));
+    const n = new Set(hit.map(l => l.slot)).size;
+    let add = 0, mult = 1;
+    hit.forEach(l => { if (l.role === "mult") mult *= 1 + lr * l.value / 100; else add += l.eff; });
+    const power = (1 + add) * mult;
+    return { n, power, names: hit.map(l => l.name), z: n >= 2 ? Math.round(interpLog(table(W, "gvg@" + weapon + "|"), power)) : 0 };
   }
 
   function forgePrice(type, picks, W, recipe, sub, refine) {
@@ -178,10 +194,12 @@
     const d = isFinite(demand) ? demand : 1;
     const sz = own ? 0 : speedPrice(pw.speed, W, name), gx = own ? 0 : dmgMult(pw.dmg, W, name);
     const combo = comboOf(pw.lines, W, name);
-    const market = Math.round((own ? curvePrice(pw.power, W, name) : sz * gx * d) * pw.s4 * combo.mult);
+    const pvm = Math.round((own ? curvePrice(pw.power, W, name) : sz * gx * d) * pw.s4 * combo.mult);
+    const gvg = gvgOf(pw.lines, W, name);
+    const market = pvm + gvg.z;
     const fc = forgeCost(recipe, W, sub);
     const rz = refineZ(refine || 0, W);
-    return { ...pw, combo, own, ownTF, demand, demandAuto: !own && !ownTF && !explicit, sizeF: sf, lv, lvBase: base, size: sizeModOf(name), speedZ: sz, dmgX: gx, market, fc, refine: refine || 0, refineZ: rz, total: Math.max(market, fc.expected) + rz, floored: fc.expected > market };
+    return { ...pw, combo, gvg, pvm, own, ownTF, demand, demandAuto: !own && !ownTF && !explicit, sizeF: sf, lv, lvBase: base, size: sizeModOf(name), speedZ: sz, dmgX: gx, market, fc, refine: refine || 0, refineZ: rz, total: Math.max(market, fc.expected) + rz, floored: fc.expected > market };
   }
 
   /* ---------- OCR matching ---------- */
@@ -247,7 +265,7 @@
     return hit[0] || "";
   }
 
-  const api = { comboOf, sizeModOf, sizeFactor, weaponFromText, hasOwnTF, tfPre, interpLog, table, speedPrice, dmgMult, refineZ, refineFromText, hasOwnOmega, omegaKey, curvePrefix, hasOwnCurve, roleOf, forgePower, curvePrice, anchors, forgePrice, starsFromText, DEFAULT_CFG, wkey, quality, optionValue, price, matchText, unitPrice, forgeCost };
+  const api = { gvgOf, comboOf, sizeModOf, sizeFactor, weaponFromText, hasOwnTF, tfPre, interpLog, table, speedPrice, dmgMult, refineZ, refineFromText, hasOwnOmega, omegaKey, curvePrefix, hasOwnCurve, roleOf, forgePower, curvePrice, anchors, forgePrice, starsFromText, DEFAULT_CFG, wkey, quality, optionValue, price, matchText, unitPrice, forgeCost };
   root.CALC = api;
   if (typeof module !== "undefined") module.exports = api;
 })(typeof window !== "undefined" ? window : globalThis);

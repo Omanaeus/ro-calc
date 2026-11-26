@@ -277,7 +277,7 @@ window.DEFAULT_WEIGHTS = {
  "forge@Gladius|4|Ignore Dragon Phys Def (%)": 0,
  "refine|7": 300,
  "refine|8": 500,
- "refine|9": 1600,
+ "refine|9": 1040,
  "speed|1": 5000000,
  "speed|1.1": 7000000,
  "speed|1.2": 25000000,
@@ -341,7 +341,7 @@ window.DEFAULT_WEIGHTS = {
  "forge@Saber|1|Physical Damage to Neutral enemies (%)": 1,
  "forge@Saber|1|Physical Damage to Water enemies (%)": 0.36,
  "forge@Saber|1|Physical Damage to Earth enemies (%)": 0.6,
- "forge@Saber|1|Physical Damage to Fire enemies (%)": 0.6,
+ "forge@Saber|1|Physical Damage to Fire enemies (%)": 1,
  "forge@Saber|1|Physical Damage to Wind enemies (%)": 0.36,
  "forge@Saber|1|Physical Damage to Poison enemies (%)": 0,
  "forge@Saber|1|Physical Damage to Holy enemies (%)": 0,
@@ -370,7 +370,7 @@ window.DEFAULT_WEIGHTS = {
  "forge@Saber|3|Phys Damage to Insect monsters (%)": 0.28,
  "forge@Saber|3|Phys Damage to Fish monsters (%)": 0.28,
  "forge@Saber|3|Phys Damage to Demon monsters (%)": 0.42,
- "forge@Saber|3|Phys Damage to Demi-Human monsters (%)": 0.7,
+ "forge@Saber|3|Phys Damage to Demi-Human monsters (%)": 1,
  "forge@Saber|3|Phys Damage to Angel monsters (%)": 0,
  "forge@Saber|4|Ignore Formless Phys Def (%)": 1,
  "forge@Saber|4|Ignore Undead Phys Def (%)": 1,
@@ -383,11 +383,6 @@ window.DEFAULT_WEIGHTS = {
  "forge@Saber|4|Ignore Angel Phys Def (%)": 0,
  "forge@Saber|4|Ignore Dragon Phys Def (%)": 0,
  "forge|useful": 0.2,
- "curve@Saber|1": 1000000,
- "curve@Saber|1.4": 2500000,
- "curve@Saber|1.6": 92307692,
- "curve@Saber|1.82": 153846154,
- "curve@Saber|2.1": 250000000,
  "speed@Two-Handed Axe|1": 4500000,
  "speed@Two-Handed Axe|1.1": 5400000,
  "speed@Two-Handed Axe|1.2": 8100000,
@@ -413,7 +408,19 @@ window.DEFAULT_WEIGHTS = {
  "dmgx@Gladius|1.1": 1.15,
  "dmgx@Gladius|1.33": 7.1,
  "dmgx@Gladius|1.7": 27.4,
- "dmgx@Gladius|2.1": 80
+ "dmgx@Gladius|2.1": 80,
+ "curve@Saber|1": 1000000,
+ "curve@Saber|1.4": 2500000,
+ "curve@Saber|1.826": 26496565,
+ "curve@Saber|2.1": 38461538,
+ "combo@Saber|min": 0.1,
+ "gvg@Saber|1.4": 40000000,
+ "gvg@Saber|1.68": 142900000,
+ "gvg@Saber|1.918": 201100000,
+ "gvg@Saber|lr": 2,
+ "refine-armor|9": 1600
 };
 // ชุดออปชันที่เข้าคู่กัน: ตรงชุดได้ 2 ช่อง × combo|x2, ครบ 3 ช่อง × combo|x3 (นับเฉพาะออปชันที่มีผล ≥ combo|min)
-window.COMBOS = {"Two-Handed Axe": [["Fire", "Earth", "Medium", "Large", "Demi-Human"], ["Neutral", "Large", "Medium"]]};
+window.COMBOS = {"Two-Handed Axe": [["Fire", "Earth", "Medium", "Large", "Demi-Human"], ["Neutral", "Large", "Medium"]], "Saber": [["Fire", "Medium", "Large", "Demi-Human"]]};
+// ราคา GvG คิดแยกจากราคาตีมอนแล้วบวกเพิ่ม: ต้องมีออปชันในชุดนี้ ≥ 2 ช่อง; ระยะไกลมีค่า lr เท่า (ตาราง gvg@อาวุธ|ค่าพลัง = z)
+window.GVG = {"Saber": {"set": ["Neutral", "Medium", "Long-range", "ATK"], "lr": 2}};
