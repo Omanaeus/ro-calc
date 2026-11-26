@@ -111,7 +111,10 @@
       lines.push({ slot: s, name: opt[0], value: v, min: opt[1], max: opt[2], q: quality(v, opt[1], opt[2]), role, omega: om, eff });
     });
     const dmg = (1 + add) * mult;
-    return { lines, add, mult, dmg, speed, s4, power: dmg * speed };
+    // ออปชันที่ใช้งานได้: ผลเทียบดาเมจ ≥ เกณฑ์ (ค่าเริ่มต้น 20%) หรือความเร็ว ≥ +0.2 (ASPD +2 ขึ้นไป / ASPD 14%)
+    const thr = Number(W["forge|useful"] ?? 0.2);
+    lines.forEach(l => { l.useful = l.role === "speed" ? l.eff >= 0.2 - 1e-9 : l.role !== "slot4" && l.eff >= thr - 1e-9; });
+    return { lines, add, mult, dmg, speed, s4, power: dmg * speed, useful: lines.filter(l => l.useful).length };
   }
 
   // เส้นราคา: จุดอ้างอิง "curve|ค่าพลัง" = ราคา (z) ต่อกันแบบ log; นอกช่วงใช้ความชันของช่วงริมสุด

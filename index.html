@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Chonburi&family=Cinzel:wght@600;700&family=Kanit:wght@500;700&family=Sarabun:wght@400;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=20261126f">
+<link rel="stylesheet" href="style.css?v=20261126i">
 <style>
 .ctop{background:linear-gradient(#0b0a1d,#2a2050);border-bottom:3px solid var(--frame);padding-block:22px}
 .ctop .wrap{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between}
@@ -227,11 +227,11 @@
 
 <footer>เครื่องมือนี้ทำโดยผู้เล่น ไม่ได้เกี่ยวข้องกับ Gravity หรือผู้ให้บริการเกม</footer>
 
-<script src="common.js?v=20261126f"></script>
-<script src="affixes.js?v=20261126f"></script>
-<script src="weights.js?v=20261126f"></script>
-<script src="recipes.js?v=20261126f"></script>
-<script src="calc-core.js?v=20261126f"></script>
+<script src="common.js?v=20261126i"></script>
+<script src="affixes.js?v=20261126i"></script>
+<script src="weights.js?v=20261126i"></script>
+<script src="recipes.js?v=20261126i"></script>
+<script src="calc-core.js?v=20261126i"></script>
 <script>
 {
 const { esc, fmt, parsePrice } = RO;
@@ -382,11 +382,12 @@ function calcForge() {
   [0, 1, 2, 3].forEach(s => { if (!r.lines.some(l => l.slot === s)) { const q = $("#q-" + s); if (q) q.style.width = "0%"; } });
   $("#grade").textContent = (refine ? "+" + refine + " " : "") + weapon + (stars ? ` · Star Crumb ×${stars}` : "") + (r.own || r.ownTF ? " · ใช้ราคาเฉพาะอาวุธนี้" : ` · ความต้องการ ×${r.demand}` + (r.demandAuto ? ` (Lv ${r.lv}: ${r.lvBase} × ขนาด ${r.sizeF.toFixed(2)})` : ""));
   $("#pw").hidden = false;
-  $("#pw").innerHTML = `<div>ตัวคูณดาเมจ <code>(1 + ${r.add.toFixed(2)})${r.mult !== 1 ? " × " + r.mult.toFixed(2) : ""}</code> = <b>${r.dmg.toFixed(2)}</b></div>
+  const TIER = ["ไม่มีออปชันที่ใช้งานได้", "ออปชันใช้งานได้ 1 ตัว: ขายออกยาก", "ออปชันใช้งานได้ 2 ตัว", "ออปชันใช้งานได้ครบ 3 ตัว"];
+  $("#pw").innerHTML = `<div><b>${TIER[Math.min(3, r.useful)]}</b></div><div>ตัวคูณดาเมจ <code>(1 + ${r.add.toFixed(2)})${r.mult !== 1 ? " × " + r.mult.toFixed(2) : ""}</code> = <b>${r.dmg.toFixed(2)}</b></div>
     <div>ความเร็ว <b>×${r.speed.toFixed(2)}</b> · ช่อง 4 <b>×${r.s4.toFixed(3)}</b></div>
     ${r.own ? `<div>ค่าพลัง = ${r.dmg.toFixed(2)} × ${r.speed.toFixed(2)} = <b>${r.power.toFixed(3)}</b></div>` : `<div>ราคา = ${esc(n0(r.speedZ / 1e6))}m (ความเร็ว) × <b>${r.dmgX.toFixed(2)}</b> (ดาเมจ) × ${r.demand}${r.s4 !== 1 ? " × " + r.s4.toFixed(3) : ""}</div>`}`;
   $("#bd-head").innerHTML = `<tr><th>ช่อง</th><th>ออปชัน</th><th class="n">ผล</th></tr>`;
-  const rows = r.lines.map(l => `<tr><td>${l.slot + 1}</td><td>${esc(short(l.name))} <span style="color:var(--soft)">+${esc(l.value)}</span><br><span class="role">${ROLE[l.role]}${l.role !== "slot4" ? " · ω " + l.omega : ""}</span></td><td class="n">${l.role === "slot4" ? "×" + (1 + l.eff).toFixed(3) : l.role === "add" ? "+" + Math.round(l.eff * 100) + "% ดาเมจ" + (/(Small|Medium|Large) targets/.test(l.name) && Math.abs(l.eff - l.omega * l.value / 100) > 1e-9 ? `<br><span class="role">อาวุธนี้ตีขนาดนี้ได้ ${Math.round(l.eff / (l.omega * l.value / 100) * 100)}%</span>` : "") : esc(effText(l.role, l.omega, l.value))}</td></tr>`).join("");
+  const rows = r.lines.map(l => `<tr><td>${l.slot + 1}</td><td>${esc(short(l.name))} <span style="color:var(--soft)">+${esc(l.value)}</span><br><span class="role">${ROLE[l.role]}${l.role !== "slot4" ? " · ω " + l.omega : ""}${l.useful ? " · ✓ ใช้งานได้" : ""}</span></td><td class="n">${l.role === "slot4" ? "×" + (1 + l.eff).toFixed(3) : l.role === "add" ? "+" + Math.round(l.eff * 100) + "% ดาเมจ" + (/(Small|Medium|Large) targets/.test(l.name) && Math.abs(l.eff - l.omega * l.value / 100) > 1e-9 ? `<br><span class="role">อาวุธนี้ตีขนาดนี้ได้ ${Math.round(l.eff / (l.omega * l.value / 100) * 100)}%</span>` : "") : esc(effText(l.role, l.omega, l.value))}</td></tr>`).join("");
   $("#bd").innerHTML = (rows || `<tr><td colspan="3" style="color:var(--soft)">ยังไม่มีออปชัน</td></tr>`) +
     (r.own ? "" : `<tr class="cost"><td>–</td><td>ราคาตามความเร็ว ×${r.speed.toFixed(2)}</td><td class="n">${esc(n0(r.speedZ))}</td></tr><tr class="cost"><td>–</td><td>× ตัวคูณจากดาเมจ ${r.dmg.toFixed(2)} · × ความต้องการ ${r.demand}${r.s4 !== 1 ? " · × ช่อง 4" : ""}</td><td class="n">×${(r.dmgX * r.demand * r.s4).toFixed(2)}</td></tr>`) +
     `<tr class="cost"><td>–</td><td>${r.own ? "ราคาตลาดจากเส้นราคาของ " + esc(weapon) + (r.s4 !== 1 ? " × ช่อง 4" : "") : "= ราคาตลาด"}</td><td class="n">${esc(n0(r.market))}</td></tr>` +
