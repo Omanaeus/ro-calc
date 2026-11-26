@@ -95,9 +95,9 @@
     type.slots.forEach((pool, s) => {
       const p = picks[s]; if (!p || !p.name) return;
       const opt = pool.find(o => o[0] === p.name); if (!opt) return;
-      const v = Math.max(0, Number(p.value) || 0), role = roleOf(s, opt[0]);
+      const raw = Math.max(0, Number(p.value) || 0), v = Math.min(raw, opt[2]), role = roleOf(s, opt[0]); // ค่าเกินช่วง roll ถูกตัดที่ค่าสูงสุด
       const k = omegaKey(W, weapon, s, opt[0]);
-      const w = Number(W[k] ?? W[wkey(type.id, s, opt[0])]); const om = isFinite(w) ? w : 0;
+      const w = Number(W[k] ?? W[wkey(type.id, s, opt[0])]); const om = isFinite(w) ? Math.max(0, Math.min(5, w)) : 0;
       let eff = 0;
       if (role === "add") {
         eff = om * v / 100;
@@ -108,7 +108,7 @@
       else if (role === "mult") { eff = om * v / 100; mult *= 1 + eff; }
       else if (role === "speed") { eff = om * v; speed += eff; }
       else { const match = race3 && raceOf(opt[0]) === race3; const c = Number(W[match ? "forge|s4match" : "forge|s4other"]) || 0; eff = c * v / 100; s4 *= 1 + eff; }
-      lines.push({ slot: s, name: opt[0], value: v, min: opt[1], max: opt[2], q: quality(v, opt[1], opt[2]), role, omega: om, eff });
+      lines.push({ slot: s, name: opt[0], value: v, over: raw > opt[2], min: opt[1], max: opt[2], q: quality(v, opt[1], opt[2]), role, omega: om, eff });
     });
     const dmg = (1 + add) * mult;
     // ออปชันที่ใช้งานได้: ผลเทียบดาเมจ ≥ เกณฑ์ (ค่าเริ่มต้น 20%) หรือความเร็ว ≥ +0.2 (ASPD +2 ขึ้นไป / ASPD 14%)
@@ -128,6 +128,7 @@
   // ต่อจุดแบบ log (ใช้กับทุกตาราง): pts = [[x, y], ...] เรียงตาม x
   function interpLog(pts, x) {
     if (!pts.length) return 0; if (pts.length === 1) return pts[0][1];
+    x = Math.max(pts[0][0] - 0.3, Math.min(x, pts[pts.length - 1][0] + 0.3)); // ต่อเส้นเกินจุดริมได้ไม่เกิน 0.3 กันราคาพุ่ง
     let i = pts.findIndex(a => a[0] >= x);
     if (i === 0) i = 1; else if (i < 0) i = pts.length - 1;
     const [x0, y0] = pts[i - 1], [x1, y1] = pts[i], t = (x - x0) / (x1 - x0);
@@ -140,14 +141,8 @@
   const tfPre = (W, kind, weapon) => weapon && table(W, kind + "@" + weapon + "|").length >= 2 ? kind + "@" + weapon + "|" : kind + "|";
   const speedPrice = (sp, W, weapon) => interpLog(table(W, tfPre(W, "speed", weapon)), sp);
   const dmgMult = (d, W, weapon) => interpLog(table(W, tfPre(W, "dmgx", weapon)), d);
-  function curvePrice(P, W, weapon) {
-    const A = anchors(W, weapon); if (!A.length) return 0; if (A.length === 1) return A[0][1];
-    let i = A.findIndex(a => a[0] >= P);
-    if (i === 0) i = 1; else if (i < 0) i = A.length - 1;
-    const [p0, z0] = A[i - 1], [p1, z1] = A[i];
-    const t = (P - p0) / (p1 - p0);
-    return Math.max(0, Math.exp(Math.log(z0) + t * (Math.log(z1) - Math.log(z0))));
-  }
+  function curvePrice(P, W, weapon) { return interpLog(anchors(W, weapon), P); }
+
 
   // ค่าตีบวก: "refine|ระดับ" = ราคาใบการันตี (บาท) บวกตรงๆ แปลงเป็น z ด้วย "thb|perM"
   function refineZ(level, W) {
