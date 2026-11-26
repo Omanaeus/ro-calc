@@ -97,7 +97,8 @@
       const opt = pool.find(o => o[0] === p.name); if (!opt) return;
       const raw = Math.max(0, Number(p.value) || 0), v = Math.min(raw, opt[2]), role = roleOf(s, opt[0]); // ค่าเกินช่วง roll ถูกตัดที่ค่าสูงสุด
       const k = omegaKey(W, weapon, s, opt[0]);
-      const w = Number(W[k] ?? W[wkey(type.id, s, opt[0])]); const om = isFinite(w) ? Math.max(0, Math.min(5, w)) : 0;
+      const rawW = W[k] ?? W[wkey(type.id, s, opt[0])];
+      const w = rawW === undefined && s === 3 ? 1 : Number(rawW); const om = isFinite(w) ? Math.max(0, Math.min(5, w)) : 0; // ช่อง 4: ω = ตัวคูณของ c
       let eff = 0;
       if (role === "add") {
         eff = om * v / 100;
@@ -107,7 +108,7 @@
       }
       else if (role === "mult") { eff = om * v / 100; mult *= 1 + eff; }
       else if (role === "speed") { eff = om * v; speed += eff; }
-      else { const match = race3 && raceOf(opt[0]) === race3; const c = Number(W[match ? "forge|s4match" : "forge|s4other"]) || 0; eff = c * v / 100; s4 *= 1 + eff; }
+      else { const match = race3 && raceOf(opt[0]) === race3; const c = Number(W[match ? "forge|s4match" : "forge|s4other"]) || 0; eff = c * om * v / 100; s4 *= 1 + eff; }
       lines.push({ slot: s, name: opt[0], value: v, over: raw > opt[2], min: opt[1], max: opt[2], q: quality(v, opt[1], opt[2]), role, omega: om, eff });
     });
     const dmg = (1 + add) * mult;
@@ -152,6 +153,19 @@
   // "+9 Very Very ..." บรรทัดชื่อไอเทม → 9
   function refineFromText(text) { const m = String(text || "").match(/(?:^|\n)\s*\+\s?(\d{1,2})\s+[A-Za-z]/); return m ? Math.min(20, parseInt(m[1], 10)) : 0; }
 
+  // ชุดออปชันที่เข้าคู่กัน (จาก weights.js: window.COMBOS) → ตัวคูณราคา
+  function comboOf(lines, W, weapon) {
+    const sets = ((root.COMBOS || {})[weapon]) || [], min = Number(W["combo|min"] ?? 0.15);
+    let best = { n: 0, mult: 1, names: [] };
+    sets.forEach(set => {
+      const hit = lines.filter(l => l.role !== "slot4" && (l.role === "speed" ? false : l.eff >= min - 1e-9) && set.some(k => new RegExp("\\b" + k + "\\b").test(l.name)));
+      const n = new Set(hit.map(l => l.slot)).size;
+      const mult = n >= 3 ? Number(W["combo|x3"] ?? 4) : n === 2 ? Number(W["combo|x2"] ?? 2) : 1;
+      if (mult > best.mult) best = { n, mult, names: hit.map(l => l.name) };
+    });
+    return best;
+  }
+
   function forgePrice(type, picks, W, recipe, sub, refine) {
     const name = recipe ? recipe[0] : "", own = hasOwnCurve(W, name), ownTF = !own && hasOwnTF(W, name);
     const pw = forgePower(type, picks, W, name);
@@ -163,10 +177,11 @@
     const demand = own || (ownTF && table(W, "speed@" + name + "|").length >= 2) ? 1 : explicit ? Number(W["demand|" + name]) : +(base * sf).toFixed(3);
     const d = isFinite(demand) ? demand : 1;
     const sz = own ? 0 : speedPrice(pw.speed, W, name), gx = own ? 0 : dmgMult(pw.dmg, W, name);
-    const market = Math.round((own ? curvePrice(pw.power, W, name) : sz * gx * d) * pw.s4);
+    const combo = comboOf(pw.lines, W, name);
+    const market = Math.round((own ? curvePrice(pw.power, W, name) : sz * gx * d) * pw.s4 * combo.mult);
     const fc = forgeCost(recipe, W, sub);
     const rz = refineZ(refine || 0, W);
-    return { ...pw, own, ownTF, demand, demandAuto: !own && !ownTF && !explicit, sizeF: sf, lv, lvBase: base, size: sizeModOf(name), speedZ: sz, dmgX: gx, market, fc, refine: refine || 0, refineZ: rz, total: Math.max(market, fc.expected) + rz, floored: fc.expected > market };
+    return { ...pw, combo, own, ownTF, demand, demandAuto: !own && !ownTF && !explicit, sizeF: sf, lv, lvBase: base, size: sizeModOf(name), speedZ: sz, dmgX: gx, market, fc, refine: refine || 0, refineZ: rz, total: Math.max(market, fc.expected) + rz, floored: fc.expected > market };
   }
 
   /* ---------- OCR matching ---------- */
@@ -232,7 +247,7 @@
     return hit[0] || "";
   }
 
-  const api = { sizeModOf, sizeFactor, weaponFromText, hasOwnTF, tfPre, interpLog, table, speedPrice, dmgMult, refineZ, refineFromText, hasOwnOmega, omegaKey, curvePrefix, hasOwnCurve, roleOf, forgePower, curvePrice, anchors, forgePrice, starsFromText, DEFAULT_CFG, wkey, quality, optionValue, price, matchText, unitPrice, forgeCost };
+  const api = { comboOf, sizeModOf, sizeFactor, weaponFromText, hasOwnTF, tfPre, interpLog, table, speedPrice, dmgMult, refineZ, refineFromText, hasOwnOmega, omegaKey, curvePrefix, hasOwnCurve, roleOf, forgePower, curvePrice, anchors, forgePrice, starsFromText, DEFAULT_CFG, wkey, quality, optionValue, price, matchText, unitPrice, forgeCost };
   root.CALC = api;
   if (typeof module !== "undefined") module.exports = api;
 })(typeof window !== "undefined" ? window : globalThis);
