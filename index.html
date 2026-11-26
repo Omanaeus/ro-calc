@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Chonburi&family=Cinzel:wght@600;700&family=Kanit:wght@500;700&family=Sarabun:wght@400;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=20261126r">
+<link rel="stylesheet" href="style.css?v=20261126u">
 <style>
 .ctop{background:linear-gradient(#0b0a1d,#2a2050);border-bottom:3px solid var(--frame);padding-block:22px}
 .ctop .wrap{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between}
@@ -228,11 +228,11 @@
 
 <footer>เครื่องมือนี้ทำโดยผู้เล่น ไม่ได้เกี่ยวข้องกับ Gravity หรือผู้ให้บริการเกม</footer>
 
-<script src="common.js?v=20261126r"></script>
-<script src="affixes.js?v=20261126r"></script>
-<script src="weights.js?v=20261126r"></script>
-<script src="recipes.js?v=20261126r"></script>
-<script src="calc-core.js?v=20261126r"></script>
+<script src="common.js?v=20261126u"></script>
+<script src="affixes.js?v=20261126u"></script>
+<script src="weights.js?v=20261126u"></script>
+<script src="recipes.js?v=20261126u"></script>
+<script src="calc-core.js?v=20261126u"></script>
 <script>
 {
 const { esc, fmt, parsePrice } = RO;
@@ -278,7 +278,7 @@ function renderSlots() {
       <label class="vh" for="v-${s}">ค่าของช่อง ${s + 1}</label>
       <input id="v-${s}" data-f="value" type="number" inputmode="decimal" ${opt ? `min="${opt[1]}" max="${opt[2]}" value="${esc(p.value)}" placeholder="${opt[1]}–${opt[2]}"` : "disabled placeholder=\"ค่า\""}>
       <div class="meter"><span class="bar"><i id="q-${s}"></i></span><span style="white-space:nowrap">${opt ? `ช่วง ${opt[1]}–${opt[2]}` : ""}</span></div>
-      <div class="w"><label for="w-${s}">${cur.id === "forge" ? (s === 3 ? "ตัวคูณช่อง 4 (0 = ไม่มีราคา)" : "ค่าเทียบดาเมจ ω ต่อ 1 หน่วย") : "น้ำหนัก (ราคาที่ค่าสูงสุด)"}</label><input id="w-${s}" data-f="w" inputmode="decimal" ${opt ? `value="${esc(wval(s, opt[0]) ?? (s === 3 ? 1 : ""))}"` : "disabled"} placeholder="${cur.id === "forge" ? "ω" : "z"}"></div>
+      <div class="w"><label for="w-${s}">${cur.id === "forge" ? (s === 3 ? "ตัวคูณช่อง 4 (0 = ไม่มีราคา)" : opt && CALC.roleOf(s, opt[0]) === "speed" ? (opt[0] === "ASPD" ? "ความเร็วต่อ ASPD +1 (มาตรฐาน 0.1)" : "ความเร็วต่อ ASPD 1% (มาตรฐาน 0.015)") : "ค่าเทียบดาเมจ ω ต่อ 1 หน่วย") : "น้ำหนัก (ราคาที่ค่าสูงสุด)"}</label><input id="w-${s}" data-f="w" inputmode="decimal" ${opt ? `value="${esc(wval(s, opt[0]) ?? (s === 3 ? 1 : ""))}"` : "disabled"} placeholder="${cur.id === "forge" ? "ω" : "z"}"></div>
     </div>`;
   }).join("");
   calc();

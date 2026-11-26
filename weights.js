@@ -287,9 +287,6 @@ window.DEFAULT_WEIGHTS = {
  "dmgx|1.4": 1.5,
  "dmgx|1.8": 16.67,
  "dmgx|2.1": 123,
- "curve@Gladius|1": 1000000,
- "curve@Gladius|1.649": 114582538,
- "curve@Gladius|2.3": 224040181,
  "dmgx|2.16": 139,
  "forge@Two-Handed Axe|1|Physical Damage to Neutral enemies (%)": 1,
  "forge@Two-Handed Axe|1|Physical Damage to Water enemies (%)": 0.6,
@@ -335,9 +332,6 @@ window.DEFAULT_WEIGHTS = {
  "forge@Two-Handed Axe|4|Ignore Demi-Human Phys Def (%)": 1,
  "forge@Two-Handed Axe|4|Ignore Angel Phys Def (%)": 0,
  "forge@Two-Handed Axe|4|Ignore Dragon Phys Def (%)": 0,
- "curve@Damascus|1": 1000000,
- "curve@Damascus|1.7": 120900710,
- "curve@Damascus|2.3": 224296678,
  "size|Small": 0.25,
  "size|Medium": 0.5,
  "size|Large": 0.25,
@@ -405,7 +399,21 @@ window.DEFAULT_WEIGHTS = {
  "dmgx@Two-Handed Axe|2.1": 60,
  "combo|x2": 2,
  "combo|x3": 4,
- "combo|min": 0.15
+ "combo|min": 0.15,
+ "speed@Damascus|1": 4500000,
+ "speed@Damascus|1.3": 27500000,
+ "dmgx@Damascus|1": 1,
+ "dmgx@Damascus|1.1": 1.15,
+ "dmgx@Damascus|1.33": 7.1,
+ "dmgx@Damascus|1.7": 27.4,
+ "dmgx@Damascus|2.1": 80,
+ "speed@Gladius|1": 3825000,
+ "speed@Gladius|1.3": 23375000,
+ "dmgx@Gladius|1": 1,
+ "dmgx@Gladius|1.1": 1.15,
+ "dmgx@Gladius|1.33": 7.1,
+ "dmgx@Gladius|1.7": 27.4,
+ "dmgx@Gladius|2.1": 80
 };
 // ชุดออปชันที่เข้าคู่กัน: ตรงชุดได้ 2 ช่อง × combo|x2, ครบ 3 ช่อง × combo|x3 (นับเฉพาะออปชันที่มีผล ≥ combo|min)
 window.COMBOS = {"Two-Handed Axe": [["Fire", "Earth", "Medium", "Large", "Demi-Human"], ["Neutral", "Large", "Medium"]]};
